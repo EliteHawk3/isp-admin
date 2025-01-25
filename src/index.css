@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* General Reset */
+body {
+  @apply bg-gray-950 text-gray-300 h-screen w-screen m-0 p-0 overflow-hidden; /* Full screen dark theme */
+}
+
+/* Default Link Style */
+a {
+  @apply text-blue-400 hover:text-blue-500;
+}
+
+/* Button Styling */
+button {
+  @apply rounded-lg border border-transparent p-3 text-sm font-medium bg-gray-800 hover:border-blue-500 transition duration-300;
+}
+
+/* Headings */
+h1 {
+  @apply text-3xl font-bold leading-tight;
+}
