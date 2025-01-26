@@ -6,31 +6,79 @@ import {
   FaClock,
   FaSearch,
 } from "react-icons/fa";
+import { useUsers } from "../../context/UsersContext";
 
 interface PaymentsSidebarProps {
-  allCount: number;
-  pendingCount: number;
-  paidCount: number;
-  overdueCount: number;
   setSelectedCategory: (category: string) => void;
   search: string;
   setSearch: (query: string) => void;
   activeCategory: string;
-  onSearch: (query: string) => void; // Trigger search logic in the parent
+  onSearch: (query: string) => void;
 }
 
 const PaymentsSidebar: FC<PaymentsSidebarProps> = ({
-  allCount,
-  pendingCount,
-  paidCount,
-  overdueCount,
   setSelectedCategory,
   search,
   setSearch,
   activeCategory,
   onSearch,
 }) => {
+  const { users } = useUsers();
   const [isExpanded, setIsExpanded] = useState(true);
+
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const filteredPayments = useMemo(() => {
+    return users.flatMap((user) =>
+      user.payments.filter((payment) => {
+        const paymentDate = new Date(payment.date || "");
+        const paidDate = new Date(payment.paidDate || "");
+        const paymentYear = paymentDate.getFullYear();
+        const paymentMonth = paymentDate.getMonth();
+        const paidYear = paidDate.getFullYear();
+        const paidMonth = paidDate.getMonth();
+
+        const isCurrentMonthPayment =
+          paymentYear === currentYear && paymentMonth === currentMonth;
+
+        const isPaidInCurrentMonth =
+          payment.status === "Paid" &&
+          paidYear === currentYear &&
+          paidMonth === currentMonth;
+
+        const isPreviousMonthsPendingOrOverdue =
+          ["Pending", "Overdue"].includes(payment.status) &&
+          (paymentYear < currentYear ||
+            (paymentYear === currentYear && paymentMonth < currentMonth));
+
+        // Include:
+        // - Payments for the current month (all statuses)
+        // - Payments paid in the current month, regardless of original date
+        // - Previous months' pending or overdue payments
+        return (
+          isCurrentMonthPayment ||
+          isPaidInCurrentMonth ||
+          isPreviousMonthsPendingOrOverdue
+        );
+      })
+    );
+  }, [users, currentMonth, currentYear]);
+
+  // Calculate counts dynamically
+  const allCount = filteredPayments.length;
+  const pendingCount = filteredPayments.filter(
+    (payment) => payment.status === "Pending"
+  ).length;
+  const paidCount = filteredPayments.filter(
+    (payment) =>
+      payment.status === "Paid" &&
+      new Date(payment.paidDate || "").getMonth() === currentMonth &&
+      new Date(payment.paidDate || "").getFullYear() === currentYear
+  ).length;
+  const overdueCount = filteredPayments.filter(
+    (payment) => payment.status === "Overdue"
+  ).length;
 
   const categories = useMemo(
     () => [
@@ -72,8 +120,9 @@ const PaymentsSidebar: FC<PaymentsSidebarProps> = ({
           type="text"
           value={search}
           onChange={(e) => {
-            setSearch(e.target.value);
-            onSearch(e.target.value);
+            const query = e.target.value;
+            setSearch(query);
+            onSearch(query);
           }}
           placeholder="Search by user or package..."
           className="w-full pl-10 p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"

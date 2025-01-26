@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./App";
 import PackagesProvider from "./context/PackagesProvider"; // Import the provider
 import { UsersProvider } from "./context/UsersProvider";
-
+// import "./App.css";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <PackagesProvider>

@@ -1,56 +1,114 @@
-import PaymentsHeader from "../components/payments/PaymentsHeader";
 import PaymentsSummary from "../components/payments/PaymentsSummary";
 import PaymentsList from "../components/payments/PaymentsList";
 import PaymentsSidebar from "../components/payments/PaymentsSideBar";
+import PaymentHistory from "../components/payments/PaymentsHistory";
 import { useUsers } from "../context/UsersContext";
 import { usePackages } from "../context/PackagesContext";
-import { Payment } from "../types/payments";
 import { useState, useMemo } from "react";
-import PaymentHistory from "../components/payments/PaymentsHistory";
+import * as XLSX from "xlsx";
+import PaymentsHeader from "../components/payments/PaymentsHeader";
+import RevenueReport from "../components/payments/RevenueReport";
 const PaymentsPage = () => {
   const { users, markAsPaid, markAsUnpaid, setUsers } = useUsers();
   const { packages } = usePackages();
 
-  const payments: Payment[] = useMemo(() => {
-    return users.flatMap((user) => user.payments || []);
-  }, [users]);
-
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [isRevenueModalOpen, setRevenueModalOpen] = useState(false);
 
-  const handleCloseHistory = () => {
-    setSelectedUser(null);
-  };
+  const handleOpenRevenueModal = () => setRevenueModalOpen(true);
+  const handleCloseRevenueModal = () => setRevenueModalOpen(false);
+  const handleCloseHistory = () => setSelectedUser(null);
+
+  // All payments flattened
+  const allPayments = useMemo(() => {
+    return users.flatMap((user) => user.payments);
+  }, [users]);
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  // Filter payments dynamically based on category and search
   const filteredPayments = useMemo(() => {
-    return payments.filter((payment) => {
-      const user = users.find((user) => user.id === payment.userId);
-      const packageDetails = packages.find(
-        (pkg) => pkg.id === payment.packageId
-      );
+    return users.flatMap((user) =>
+      user.payments.filter((payment) => {
+        const paymentDate = new Date(payment.date || "");
+        const paidDate = new Date(payment.paidDate || "");
+        const paymentYear = paymentDate.getFullYear();
+        const paymentMonth = paymentDate.getMonth();
+        const paidYear = paidDate.getFullYear();
+        const paidMonth = paidDate.getMonth();
 
-      const matchesCategory =
-        selectedCategory === "all" ||
-        payment.status.toLowerCase() === selectedCategory;
+        const isCurrentMonthPayment =
+          paymentYear === currentYear && paymentMonth === currentMonth;
 
-      const matchesSearch =
-        user?.name.toLowerCase().includes(search.toLowerCase()) ||
-        packageDetails?.name.toLowerCase().includes(search.toLowerCase());
+        const isPaidInCurrentMonth =
+          payment.status === "Paid" &&
+          paidYear === currentYear &&
+          paidMonth === currentMonth;
 
-      return matchesCategory && matchesSearch;
+        const isPreviousMonthsPendingOrOverdue =
+          ["Pending", "Overdue"].includes(payment.status) &&
+          (paymentYear < currentYear ||
+            (paymentYear === currentYear && paymentMonth < currentMonth));
+
+        const matchesDateContext =
+          isCurrentMonthPayment ||
+          isPaidInCurrentMonth ||
+          isPreviousMonthsPendingOrOverdue;
+
+        const userName = user.name.toLowerCase();
+        const packageDetails = packages.find(
+          (pkg) => pkg.id === payment.packageId
+        );
+
+        const matchesCategory =
+          selectedCategory === "all" ||
+          payment.status.toLowerCase() === selectedCategory;
+
+        const matchesSearch =
+          search.toLowerCase() === "" ||
+          userName.includes(search.toLowerCase()) ||
+          packageDetails?.name.toLowerCase().includes(search.toLowerCase());
+
+        // Combine date context and search/category filtering
+        return matchesDateContext && matchesCategory && matchesSearch;
+      })
+    );
+  }, [users, packages, selectedCategory, search, currentMonth, currentYear]);
+
+  // Handle download logic for PaymentsHeader
+  const handleDownload = (filters: {
+    months: string[];
+    all: boolean;
+    statuses: string[];
+  }) => {
+    const filtered = allPayments.filter((payment) => {
+      const paymentMonth = `${new Date(
+        payment.paidDate || payment.date
+      ).getFullYear()}-${
+        new Date(payment.paidDate || payment.date).getMonth() + 1
+      }`;
+
+      const matchesMonth = filters.all || filters.months.includes(paymentMonth);
+      const matchesStatus =
+        filters.all || filters.statuses.includes(payment.status);
+
+      return matchesMonth && matchesStatus;
     });
-  }, [payments, selectedCategory, search, users, packages]);
 
-  const getUserNameById = (userId: string) => {
-    const user = users.find((u) => u.id === userId);
-    return user ? user.name : "Unknown User";
-  };
-
-  const getPackageDetailsById = (packageId: string) => {
-    const packageItem = packages.find((pkg) => pkg.id === packageId);
-    return packageItem
-      ? { name: packageItem.name, price: packageItem.cost }
-      : { name: "Unknown", price: 0 };
+    const worksheet = XLSX.utils.json_to_sheet(
+      filtered.map((payment) => ({
+        ID: payment.id,
+        User: payment.userId,
+        Amount: `$${payment.discountedAmount.toFixed(2)}`,
+        Status: payment.status,
+        Date: payment.paidDate || payment.date,
+        DueDate: payment.dueDate,
+      }))
+    );
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
+    XLSX.writeFile(workbook, "Payments.xlsx");
   };
 
   const handleMarkAsPaid = (
@@ -82,19 +140,12 @@ const PaymentsPage = () => {
 
   return (
     <div className="flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
-      {/* Header */}
-      <PaymentsHeader
-        totalPaymentsCount={payments.length}
-        payments={payments}
-      />
+      {/* Payments Header */}
+      <PaymentsHeader onDownload={handleDownload} />
 
       <div className="flex">
         {/* Sidebar */}
         <PaymentsSidebar
-          allCount={payments.length}
-          pendingCount={payments.filter((p) => p.status === "Pending").length}
-          paidCount={payments.filter((p) => p.status === "Paid").length}
-          overdueCount={payments.filter((p) => p.status === "Overdue").length}
           setSelectedCategory={setSelectedCategory}
           search={search}
           setSearch={setSearch}
@@ -102,45 +153,30 @@ const PaymentsPage = () => {
           onSearch={setSearch}
         />
 
-        {/* Main Content */}
         <div className="w-3/4 p-6">
-          <PaymentsSummary
-            totalRevenue={payments
-              .filter((p) => p.status === "Paid")
-              .reduce((sum, p) => sum + p.discountedAmount, 0)}
-            totalPaidUsers={payments.filter((p) => p.status === "Paid").length}
-            outstandingPayments={payments
-              .filter((p) => p.status === "Pending" || p.status === "Overdue")
-              .reduce((sum, p) => sum + p.discountedAmount, 0)}
-            outstandingUsers={
-              payments.filter(
-                (p) => p.status === "Pending" || p.status === "Overdue"
-              ).length
-            }
-            userEngagement={
-              (payments.filter((p) => p.status === "Paid").length /
-                users.length) *
-              100
-            }
-          />
+          {/* Payments Summary */}
+          <PaymentsSummary onRevenueClick={handleOpenRevenueModal} />
 
+          {/* Revenue Modal */}
+          {isRevenueModalOpen && (
+            <RevenueReport onClose={handleCloseRevenueModal} />
+          )}
+
+          {/* Payments List */}
           <PaymentsList
             payments={filteredPayments}
             handleMarkAsPaid={handleMarkAsPaid}
             handleMarkAsUnpaid={handleMarkAsUnpaid}
             handleDeletePayment={handleDeletePayment}
-            getUserNameById={getUserNameById}
-            getPackageDetailsById={getPackageDetailsById}
-            onViewHistory={(userId) => setSelectedUser(userId)}
+            onViewHistory={setSelectedUser}
+            // activeCategory={selectedCategory}
           />
+
+          {/* Payment History Modal */}
           {selectedUser && (
             <PaymentHistory
-              payments={
-                users.find((user) => user.id === selectedUser)?.payments || []
-              }
+              selectedUserId={selectedUser}
               onClose={handleCloseHistory}
-              getUserNameById={getUserNameById}
-              getPackageDetailsById={getPackageDetailsById}
             />
           )}
         </div>

@@ -1,32 +1,74 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion"; // For animations
+import React, { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
-  FaCheckCircle,
-  FaExclamationCircle,
-  FaClock,
   FaTimesCircle,
-} from "react-icons/fa"; // Icons for statuses
-import { Payment } from "../../types/payments";
+  FaFileExcel,
+  FaArrowLeft,
+  FaArrowRight,
+} from "react-icons/fa";
+import * as XLSX from "xlsx";
+import { useUsers } from "../../context/UsersContext";
+import { usePackages } from "../../context/PackagesContext";
 
 interface PaymentHistoryProps {
-  payments: Payment[];
-  onClose: () => void;
-  getUserNameById: (userId: string) => string;
-  getPackageDetailsById: (packageId: string) => { name: string; price: number };
+  selectedUserId: string; // ID of the selected user
+  onClose: () => void; // Close the history modal
 }
 
 const PaymentHistory: React.FC<PaymentHistoryProps> = ({
-  payments,
+  selectedUserId,
   onClose,
-  getUserNameById,
-  getPackageDetailsById,
 }) => {
-  const [filter, setFilter] = useState<string>("all");
+  const { users } = useUsers(); // Access UsersContext
+  const { packages } = usePackages(); // Access PackagesContext
 
-  const filteredPayments = payments.filter((payment) =>
-    filter === "all" ? true : payment.status === filter
+  const [filter, setFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("date");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // Find the selected user
+  const selectedUser = useMemo(
+    () => users.find((user) => user.id === selectedUserId),
+    [users, selectedUserId]
   );
 
+  // Filter payments for the selected user
+  const filteredPayments = useMemo(() => {
+    if (!selectedUser) return [];
+    return selectedUser.payments.filter((payment) => {
+      if (filter === "all") return true;
+      return payment.status === filter;
+    });
+  }, [selectedUser, filter]);
+
+  // Sort payments
+  const sortedPayments = useMemo(() => {
+    return [...filteredPayments].sort((a, b) => {
+      if (sortBy === "amount") return b.discountedAmount - a.discountedAmount;
+      if (sortBy === "status") return a.status.localeCompare(b.status);
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+  }, [filteredPayments, sortBy]);
+
+  // Paginate payments
+  const paginatedPayments = useMemo(() => {
+    return sortedPayments.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+  }, [sortedPayments, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(sortedPayments.length / itemsPerPage);
+
+  // Get package details by ID
+  const getPackageDetailsById = (packageId: string) =>
+    packages.find((pkg) => pkg.id === packageId) || {
+      name: "Unknown",
+      cost: 0,
+    };
+
+  // Format date
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString(undefined, {
       year: "numeric",
@@ -34,17 +76,22 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({
       day: "numeric",
     });
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "Paid":
-        return <FaCheckCircle className="text-green-500 text-lg" />;
-      case "Pending":
-        return <FaClock className="text-yellow-500 text-lg" />;
-      case "Overdue":
-        return <FaExclamationCircle className="text-red-500 text-lg" />;
-      default:
-        return <FaTimesCircle className="text-gray-500 text-lg" />;
-    }
+  // Export to Excel
+  const handleDownload = () => {
+    const worksheet = XLSX.utils.json_to_sheet(
+      filteredPayments.map((payment) => ({
+        ID: payment.id,
+        Package: getPackageDetailsById(payment.packageId).name,
+        Amount: `$${payment.discountedAmount.toFixed(2)}`,
+        Status: payment.status,
+        Date: formatDate(payment.date),
+        DueDate: formatDate(payment.dueDate),
+        PaidDate: payment.paidDate ? formatDate(payment.paidDate) : "N/A",
+      }))
+    );
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Payment History");
+    XLSX.writeFile(workbook, `${selectedUser?.name || "User"}_History.xlsx`);
   };
 
   return (
@@ -61,8 +108,11 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({
         transition={{ duration: 0.5 }}
         className="bg-gradient-to-br from-gray-800 via-gray-900 to-black p-6 rounded-lg shadow-lg text-white w-[90%] sm:w-[600px]"
       >
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Payment History</h2>
+          <h2 className="text-2xl font-bold">
+            Payment History: {selectedUser?.name || "Unknown User"}
+          </h2>
           <button
             onClick={onClose}
             className="bg-red-600 px-3 py-2 rounded-full shadow-lg hover:bg-red-700"
@@ -71,26 +121,35 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({
           </button>
         </div>
 
-        {/* Filter Options */}
-        <div className="flex justify-center gap-4 mb-4">
-          {["all", "Paid", "Pending", "Overdue"].map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
-                filter === status ? "bg-blue-600 text-white" : "bg-gray-700"
-              }`}
-            >
-              {getStatusIcon(status === "all" ? "" : status)}
-              {status === "all" ? "All" : status}
-            </button>
-          ))}
+        {/* Filter and Sort */}
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex gap-4">
+            {["all", "Paid", "Pending", "Overdue"].map((status) => (
+              <button
+                key={status}
+                onClick={() => setFilter(status)}
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                  filter === status ? "bg-blue-600 text-white" : "bg-gray-700"
+                }`}
+              >
+                {status === "all" ? "All" : status}
+              </button>
+            ))}
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-gray-800 text-white px-4 py-2 rounded-lg"
+          >
+            <option value="date">Sort by Date</option>
+            <option value="amount">Sort by Amount</option>
+            <option value="status">Sort by Status</option>
+          </select>
         </div>
 
-        {/* Payment List */}
+        {/* Payments List */}
         <div className="overflow-y-auto max-h-96">
-          {filteredPayments.map((payment) => {
-            const userName = getUserNameById(payment.userId);
+          {paginatedPayments.map((payment) => {
             const packageDetails = getPackageDetailsById(payment.packageId);
 
             return (
@@ -107,20 +166,13 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({
                 }}
               >
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    {getStatusIcon(payment.status)}
-                    <h3 className="text-lg font-semibold">{userName}</h3>
-                  </div>
                   <p className="text-sm">
                     <strong>Package:</strong> {packageDetails.name} ($
-                    {packageDetails.price.toFixed(2)})
+                    {packageDetails.cost.toFixed(2)})
                   </p>
                   <p className="text-sm">
                     <strong>Amount:</strong> $
                     {payment.discountedAmount.toFixed(2)}
-                  </p>
-                  <p className="text-sm">
-                    <strong>Status:</strong> {payment.status}
                   </p>
                   <p className="text-sm">
                     <strong>Due Date:</strong> {formatDate(payment.dueDate)}
@@ -136,13 +188,32 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({
           })}
         </div>
 
-        {/* Close Button */}
-        <div className="flex justify-center mt-4">
+        {/* Pagination and Export */}
+        <div className="flex justify-between items-center mt-4">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="bg-gray-700 text-white p-3 rounded-full hover:bg-gray-600 disabled:opacity-50"
+            >
+              <FaArrowLeft />
+            </button>
+            <span className="text-gray-300">{`Page ${currentPage} of ${totalPages}`}</span>
+            <button
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className="bg-gray-700 text-white p-3 rounded-full hover:bg-gray-600 disabled:opacity-50"
+            >
+              <FaArrowRight />
+            </button>
+          </div>
           <button
-            onClick={onClose}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-2 rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+            onClick={handleDownload}
+            className="bg-gradient-to-r from-green-600 to-teal-600 px-6 py-2 rounded-lg shadow-lg hover:from-green-700 hover:to-teal-700"
           >
-            Close
+            <FaFileExcel className="inline mr-2" /> Download History
           </button>
         </div>
       </motion.div>

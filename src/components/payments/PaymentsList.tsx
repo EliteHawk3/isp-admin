@@ -1,33 +1,34 @@
+import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
+import { Payment } from "../../types/payments";
 import {
   FaUndo,
   FaCheck,
   FaTrashAlt,
-  FaClock,
-  FaExclamationCircle,
   FaListAlt,
+  FaCheckCircle,
+  FaExclamationCircle,
+  FaClock,
 } from "react-icons/fa";
-import { Payment } from "../../types/payments";
-import { useState } from "react";
+import { useUsers } from "../../context/UsersContext"; // Use UsersContext
+import { usePackages } from "../../context/PackagesContext"; // Use PackagesContext
 interface PaymentsListProps {
-  payments: Payment[];
+  payments: Payment[]; // Accept filtered payments directly
   handleMarkAsPaid: (userId: string, paymentId: string, amount: number) => void;
   handleMarkAsUnpaid: (userId: string, paymentId: string) => void;
   handleDeletePayment: (userId: string, paymentId: string) => void;
-  getUserNameById: (userId: string) => string;
-  getPackageDetailsById: (packageId: string) => { name: string; price: number };
-  onViewHistory: (userId: string) => void; // Add this line
+  onViewHistory: (userId: string) => void; // View user payment history
 }
 
-const PaymentsList = ({
-  payments,
+const PaymentsList: React.FC<PaymentsListProps> = ({
   handleMarkAsPaid,
   handleMarkAsUnpaid,
   handleDeletePayment,
-  getUserNameById,
-  getPackageDetailsById,
   onViewHistory,
-}: PaymentsListProps) => {
+  payments,
+}) => {
+  const { users } = useUsers(); // Access users from context
+  const { packages } = usePackages(); // Access packages from context
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState<{
     action: string;
@@ -36,6 +37,57 @@ const PaymentsList = ({
     message: string;
   } | null>(null);
 
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  // Helper functions to fetch user name and package details
+  const getUserNameById = (userId: string) =>
+    users.find((user) => user.id === userId)?.name || "Unknown User";
+
+  const getPackageDetailsById = (packageId: string) =>
+    packages.find((pkg) => pkg.id === packageId) || {
+      name: "Unknown",
+      cost: 0,
+    };
+
+  // Filter payments dynamically based on context
+  const filteredPayments = useMemo(() => {
+    return users.flatMap((user) =>
+      user.payments.filter((payment) => {
+        const paymentDate = new Date(payment.date || "");
+        const paidDate = new Date(payment.paidDate || "");
+        const paymentYear = paymentDate.getFullYear();
+        const paymentMonth = paymentDate.getMonth();
+        const paidYear = paidDate.getFullYear();
+        const paidMonth = paidDate.getMonth();
+
+        const isCurrentMonthPayment =
+          paymentYear === currentYear && paymentMonth === currentMonth;
+
+        const isPaidInCurrentMonth =
+          payment.status === "Paid" &&
+          paidYear === currentYear &&
+          paidMonth === currentMonth;
+
+        const isPreviousMonthsPendingOrOverdue =
+          ["Pending", "Overdue"].includes(payment.status) &&
+          (paymentYear < currentYear ||
+            (paymentYear === currentYear && paymentMonth < currentMonth));
+
+        // Include:
+        // - Payments for the current month (all statuses)
+        // - Payments paid in the current month, regardless of original due date
+        // - Previous months' pending or overdue payments
+        return (
+          isCurrentMonthPayment ||
+          isPaidInCurrentMonth ||
+          isPreviousMonthsPendingOrOverdue
+        );
+      })
+    );
+  }, [users, currentMonth, currentYear]);
+
+  // Format date for display
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString(undefined, {
       year: "numeric",
@@ -43,6 +95,7 @@ const PaymentsList = ({
       day: "numeric",
     });
 
+  // Open confirmation modal
   const openModal = (
     action: string,
     userId: string,
@@ -53,15 +106,15 @@ const PaymentsList = ({
     setIsModalOpen(true);
   };
 
+  // Handle modal confirmation
   const handleConfirm = () => {
     if (modalData) {
       const { action, userId, paymentId } = modalData;
       if (action === "markAsPaid") {
-        handleMarkAsPaid(
-          userId,
-          paymentId,
-          payments.find((p) => p.id === paymentId)!.discountedAmount
-        );
+        const payment = filteredPayments.find((p) => p.id === paymentId);
+        if (payment) {
+          handleMarkAsPaid(userId, paymentId, payment.discountedAmount);
+        }
       } else if (action === "markAsUnpaid") {
         handleMarkAsUnpaid(userId, paymentId);
       } else if (action === "delete") {
@@ -73,7 +126,7 @@ const PaymentsList = ({
 
   return (
     <>
-      {/* Modal */}
+      {/* Confirmation Modal */}
       {isModalOpen && modalData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <motion.div
@@ -103,82 +156,71 @@ const PaymentsList = ({
       )}
 
       {/* Payments List */}
-      <div
-        className="overflow-y-auto max-h-[60vh] overflow-x-hidden scrollbar-thin scrollbar-thumb-blue-600 scrollbar-track-gray-800 scrollbar-thumb-rounded-md"
-        style={{
-          scrollbarWidth: "thin",
-          scrollbarColor: "#2563EB #1F2937",
-        }}
-      >
+      <div className="overflow-y-auto max-h-[60vh] custom-scrollbar space-y-4">
         {payments.map((payment) => {
           const userName = getUserNameById(payment.userId);
           const packageDetails = getPackageDetailsById(payment.packageId);
 
-          const cardColor =
-            payment.status === "Paid"
-              ? "bg-gray-800 border-green-500"
-              : payment.status === "Pending"
-              ? "bg-gray-800 border-teal-500"
-              : "bg-gray-800 border-red-500";
-
           const statusIcon =
-            payment.status === "Paid" ? (
-              <FaCheck className="text-green-500" />
+            payment.status === "Overdue" ? (
+              <FaExclamationCircle className="text-red-500 text-xl" />
             ) : payment.status === "Pending" ? (
-              <FaClock className="text-teal-500" />
+              <FaClock className="text-teal-500 text-xl" />
             ) : (
-              <FaExclamationCircle className="text-red-500" />
+              <FaCheckCircle className="text-green-500 text-xl" />
             );
+
+          // Display either Paid Date or Due Date
+          const dateLabel =
+            payment.status === "Paid"
+              ? `Paid Date: ${formatDate(payment.paidDate || "")}`
+              : `Due Date: ${formatDate(payment.dueDate || "")}`;
 
           return (
             <motion.div
               key={payment.id}
               whileHover={{ scale: 1.02 }}
-              className={`p-4 rounded-lg shadow-md hover:shadow-lg transition-transform flex justify-between items-center border-l-4 ${cardColor} mb-4`}
+              className="p-6 shadow-md hover:shadow-lg transition-transform flex justify-between items-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-l-2"
+              style={{
+                borderColor:
+                  payment.status === "Overdue"
+                    ? "red"
+                    : payment.status === "Pending"
+                    ? "teal"
+                    : "green",
+              }}
             >
-              {/* Payment Details */}
-              <div>
-                <div className="flex items-center gap-2">
-                  {statusIcon}
-                  <h3 className="text-base font-bold text-white">{userName}</h3>
+              {/* User Details */}
+              <div className="flex flex-col gap-2 w-full">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold flex items-center gap-2">
+                    {userName}
+                    {statusIcon}
+                  </h3>
                 </div>
-                <p className="text-gray-300">
-                  <span className="font-semibold">Package:</span>{" "}
-                  {packageDetails.name} (${packageDetails.price.toFixed(2)})
-                </p>
-                <p className="text-gray-300">
-                  <span className="font-semibold">Amount:</span> $
-                  {payment.discountedAmount.toFixed(2)}
-                </p>
-                <p className="text-gray-300">
-                  <span className="font-semibold">Due Date:</span>{" "}
-                  {formatDate(payment.dueDate)}
-                </p>
-                {payment.paidDate && (
-                  <p className="text-gray-300">
-                    <span className="font-semibold">Paid Date:</span>{" "}
-                    {formatDate(payment.paidDate)}
-                  </p>
-                )}
+                <div className="text-sm text-gray-400">
+                  <strong>Package:</strong> {packageDetails.name} |{" "}
+                  <strong>Price:</strong> ${packageDetails.cost.toFixed(2)}
+                </div>
+                <div className="text-sm text-gray-400">
+                  <strong>Amount:</strong> ${" "}
+                  {payment.discountedAmount.toFixed(2)} |{" "}
+                  <strong>{dateLabel}</strong>
+                </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col items-end gap-3">
-                {/* View History Icon */}
-                <motion.div
-                  whileHover={{ scale: 1.2 }}
+              {/* Actions */}
+              <div className="flex flex-col items-end gap-2">
+                <button
                   onClick={() => onViewHistory(payment.userId)}
-                  className="cursor-pointer bg-gradient-to-br from-gray-700 to-gray-800 text-blue-400 p-3 rounded-full shadow-md hover:from-gray-600 hover:to-gray-700 hover:text-blue-300 flex items-center justify-center"
+                  className="text-blue-500 hover:text-blue-700"
                   title="View History"
                 >
                   <FaListAlt className="text-xl" />
-                </motion.div>
-
-                {/* Paid and Delete Buttons */}
+                </button>
                 <div className="flex gap-2">
                   {payment.status === "Paid" ? (
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
+                    <button
                       onClick={() =>
                         openModal(
                           "markAsUnpaid",
@@ -189,13 +231,13 @@ const PaymentsList = ({
                           )} for ${userName} as Unpaid?`
                         )
                       }
-                      className="bg-gradient-to-br from-yellow-600 to-yellow-700 text-white px-4 py-2 rounded-lg shadow-sm hover:from-yellow-500 hover:to-yellow-600 flex items-center gap-1 text-sm"
+                      className=" whitespace-nowrap bg-gradient-to-r from-purple-500 to-purple-700 text-white px-3 py-2 shadow-sm hover:from-purple-600 hover:to-purple-800 flex items-center gap-x-2 text-sm"
                     >
-                      <FaUndo className="text-yellow-300" /> Mark as Unpaid
-                    </motion.button>
+                      <FaUndo />
+                      Mark as Unpaid
+                    </button>
                   ) : (
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
+                    <button
                       onClick={() =>
                         openModal(
                           "markAsPaid",
@@ -206,14 +248,13 @@ const PaymentsList = ({
                           )} for ${userName} as Paid?`
                         )
                       }
-                      className="bg-gradient-to-br from-green-600 to-green-700 text-white px-4 py-2 rounded-lg shadow-sm hover:from-green-500 hover:to-green-600 flex items-center gap-1 text-sm"
+                      className="whitespace-nowrap bg-gradient-to-r from-green-500 to-green-700 text-white px-3 py-2 shadow-sm hover:from-green-600 hover:to-green-800 flex items-center gap-1 text-sm"
                     >
-                      <FaCheck className="text-green-300" /> Mark as Paid
-                    </motion.button>
+                      <FaCheck />
+                      Mark as Paid
+                    </button>
                   )}
-
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
+                  <button
                     onClick={() =>
                       openModal(
                         "delete",
@@ -224,10 +265,11 @@ const PaymentsList = ({
                         )} for ${userName}?`
                       )
                     }
-                    className="bg-gradient-to-br from-red-600 to-red-700 text-white px-4 py-2 rounded-lg shadow-sm hover:from-red-500 hover:to-red-600 flex items-center gap-1 text-sm"
+                    className="text-red-500 hover:text-red-700"
+                    title="Delete Payment"
                   >
-                    <FaTrashAlt className="text-red-300" /> Delete
-                  </motion.button>
+                    <FaTrashAlt className="text-lg" />
+                  </button>
                 </div>
               </div>
             </motion.div>

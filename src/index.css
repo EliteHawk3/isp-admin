@@ -21,3 +21,53 @@ button {
 h1 {
   @apply text-3xl font-bold leading-tight;
 }
+
+/* Prevent horizontal overflow */
+.overflow-y-auto {
+  overflow-x: hidden; /* Disable horizontal scrolling */
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #1f2937 #0f172a; /* Thumb and Track colors */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #1f2937;
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background-color: #0f172a;
+}
+
+@keyframes professionalIcon {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.8;
+  }
+  25% {
+    transform: scale(1.1) rotate(5deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(-5deg);
+    opacity: 0.9;
+  }
+  75% {
+    transform: scale(1.1) rotate(3deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.8;
+  }
+}
+
+.animate-professionalIcon {
+  animation: professionalIcon 2.5s infinite ease-in-out;
+}
