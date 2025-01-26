@@ -6,16 +6,22 @@ import { useUsers } from "../context/UsersContext";
 import { usePackages } from "../context/PackagesContext";
 import { Payment } from "../types/payments";
 import { useState, useMemo } from "react";
-
+import PaymentHistory from "../components/payments/PaymentsHistory";
 const PaymentsPage = () => {
   const { users, markAsPaid, markAsUnpaid, setUsers } = useUsers();
   const { packages } = usePackages();
 
-  const payments: Payment[] = users.flatMap((user) => user.payments || []);
+  const payments: Payment[] = useMemo(() => {
+    return users.flatMap((user) => user.payments || []);
+  }, [users]);
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
+  const handleCloseHistory = () => {
+    setSelectedUser(null);
+  };
   const filteredPayments = useMemo(() => {
     return payments.filter((payment) => {
       const user = users.find((user) => user.id === payment.userId);
@@ -114,7 +120,7 @@ const PaymentsPage = () => {
             userEngagement={
               (payments.filter((p) => p.status === "Paid").length /
                 users.length) *
-                100 || 0
+              100
             }
           />
 
@@ -125,7 +131,18 @@ const PaymentsPage = () => {
             handleDeletePayment={handleDeletePayment}
             getUserNameById={getUserNameById}
             getPackageDetailsById={getPackageDetailsById}
+            onViewHistory={(userId) => setSelectedUser(userId)}
           />
+          {selectedUser && (
+            <PaymentHistory
+              payments={
+                users.find((user) => user.id === selectedUser)?.payments || []
+              }
+              onClose={handleCloseHistory}
+              getUserNameById={getUserNameById}
+              getPackageDetailsById={getPackageDetailsById}
+            />
+          )}
         </div>
       </div>
     </div>

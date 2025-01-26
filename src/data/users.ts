@@ -13,17 +13,27 @@ export const users: User[] = [
     discountType: "one-time", // Discount type
     payments: [
       {
-        id: "p1",
+        id: "p1-2024-12",
         userId: "1",
-        packageId: "1", // Links to "Basic Plan"
-        discountedAmount: 8, // 10 (package cost) - 2 (discount)
+        packageId: "1",
+        discountedAmount: 8, // 10 - 2 (discount)
+        status: "Paid",
+        date: "2024-12-01",
+        paidDate: "2024-12-05",
+        dueDate: "2024-12-31",
+      },
+      {
+        id: "p1-2025-01",
+        userId: "1",
+        packageId: "1",
+        discountedAmount: 8,
         status: "Pending",
         date: "2025-01-15",
-        dueDate: "2025-02-01", // Reasonable due date
+        dueDate: "2025-02-01",
       },
     ],
-    createdAt: "2025-01-01",
-    lastPaidDate: undefined,
+    createdAt: "2024-11-01",
+    lastPaidDate: "2024-12-05",
     dueDate: "2025-02-01",
     role: "user",
   },
@@ -39,17 +49,37 @@ export const users: User[] = [
     discountType: "everytime", // Discount type
     payments: [
       {
-        id: "p2",
+        id: "p2-2024-11",
         userId: "2",
-        packageId: "2", // Links to "Standard Plan"
-        discountedAmount: 10, // 15 (package cost) - 5 (discount)
+        packageId: "2",
+        discountedAmount: 10,
+        status: "Paid",
+        date: "2024-11-01",
+        paidDate: "2024-11-03",
+        dueDate: "2024-11-30",
+      },
+      {
+        id: "p2-2024-12",
+        userId: "2",
+        packageId: "2",
+        discountedAmount: 10,
+        status: "Paid",
+        date: "2024-12-01",
+        paidDate: "2024-12-05",
+        dueDate: "2024-12-31",
+      },
+      {
+        id: "p2-2025-01",
+        userId: "2",
+        packageId: "2",
+        discountedAmount: 10,
         status: "Paid",
         date: "2025-01-10",
         paidDate: "2025-01-10",
         dueDate: "2025-02-10",
       },
     ],
-    createdAt: "2025-01-05",
+    createdAt: "2024-10-15",
     lastPaidDate: "2025-01-10",
     dueDate: "2025-02-10",
     role: "user",
@@ -66,17 +96,26 @@ export const users: User[] = [
     discountType: "one-time", // Discount type
     payments: [
       {
-        id: "p3",
+        id: "p3-2024-12",
         userId: "3",
-        packageId: "3", // Links to "Premium Plan"
-        discountedAmount: 20, // 20 (package cost) - 0 (discount)
+        packageId: "3",
+        discountedAmount: 20,
         status: "Overdue",
-        date: "2025-01-05",
+        date: "2024-12-01",
+        dueDate: "2024-12-31",
+      },
+      {
+        id: "p3-2025-01",
+        userId: "3",
+        packageId: "3",
+        discountedAmount: 20,
+        status: "Overdue",
+        date: "2025-01-01",
         dueDate: "2025-02-05",
       },
     ],
-    createdAt: "2025-01-10",
-    lastPaidDate: "2025-01-05",
+    createdAt: "2024-11-10",
+    lastPaidDate: undefined,
     dueDate: "2025-02-05",
     role: "user",
   },

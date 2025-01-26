@@ -5,10 +5,10 @@ import {
   FaTrashAlt,
   FaClock,
   FaExclamationCircle,
+  FaListAlt,
 } from "react-icons/fa";
 import { Payment } from "../../types/payments";
 import { useState } from "react";
-
 interface PaymentsListProps {
   payments: Payment[];
   handleMarkAsPaid: (userId: string, paymentId: string, amount: number) => void;
@@ -16,6 +16,7 @@ interface PaymentsListProps {
   handleDeletePayment: (userId: string, paymentId: string) => void;
   getUserNameById: (userId: string) => string;
   getPackageDetailsById: (packageId: string) => { name: string; price: number };
+  onViewHistory: (userId: string) => void; // Add this line
 }
 
 const PaymentsList = ({
@@ -25,6 +26,7 @@ const PaymentsList = ({
   handleDeletePayment,
   getUserNameById,
   getPackageDetailsById,
+  onViewHistory,
 }: PaymentsListProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState<{
@@ -161,58 +163,72 @@ const PaymentsList = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2">
-                {payment.status === "Paid" ? (
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() =>
-                      openModal(
-                        "markAsUnpaid",
-                        payment.userId,
-                        payment.id,
-                        `Mark payment of $${payment.discountedAmount.toFixed(
-                          2
-                        )} for ${userName} as Unpaid?`
-                      )
-                    }
-                    className="bg-yellow-500 text-white px-3 py-2 rounded-lg shadow-sm hover:bg-yellow-600 flex items-center gap-1 text-sm"
-                  >
-                    <FaUndo /> Mark as Unpaid
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() =>
-                      openModal(
-                        "markAsPaid",
-                        payment.userId,
-                        payment.id,
-                        `Mark payment of $${payment.discountedAmount.toFixed(
-                          2
-                        )} for ${userName} as Paid?`
-                      )
-                    }
-                    className="bg-green-500 text-white px-3 py-2 rounded-lg shadow-sm hover:bg-green-600 flex items-center gap-1 text-sm"
-                  >
-                    <FaCheck /> Mark as Paid
-                  </motion.button>
-                )}
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  onClick={() =>
-                    openModal(
-                      "delete",
-                      payment.userId,
-                      payment.id,
-                      `Delete payment of $${payment.discountedAmount.toFixed(
-                        2
-                      )} for ${userName}?`
-                    )
-                  }
-                  className="bg-red-500 text-white px-3 py-2 rounded-lg shadow-sm hover:bg-red-600 flex items-center gap-1 text-sm"
+              <div className="flex flex-col items-end gap-3">
+                {/* View History Icon */}
+                <motion.div
+                  whileHover={{ scale: 1.2 }}
+                  onClick={() => onViewHistory(payment.userId)}
+                  className="cursor-pointer bg-gradient-to-br from-gray-700 to-gray-800 text-blue-400 p-3 rounded-full shadow-md hover:from-gray-600 hover:to-gray-700 hover:text-blue-300 flex items-center justify-center"
+                  title="View History"
                 >
-                  <FaTrashAlt /> Delete
-                </motion.button>
+                  <FaListAlt className="text-xl" />
+                </motion.div>
+
+                {/* Paid and Delete Buttons */}
+                <div className="flex gap-2">
+                  {payment.status === "Paid" ? (
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() =>
+                        openModal(
+                          "markAsUnpaid",
+                          payment.userId,
+                          payment.id,
+                          `Mark payment of $${payment.discountedAmount.toFixed(
+                            2
+                          )} for ${userName} as Unpaid?`
+                        )
+                      }
+                      className="bg-gradient-to-br from-yellow-600 to-yellow-700 text-white px-4 py-2 rounded-lg shadow-sm hover:from-yellow-500 hover:to-yellow-600 flex items-center gap-1 text-sm"
+                    >
+                      <FaUndo className="text-yellow-300" /> Mark as Unpaid
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() =>
+                        openModal(
+                          "markAsPaid",
+                          payment.userId,
+                          payment.id,
+                          `Mark payment of $${payment.discountedAmount.toFixed(
+                            2
+                          )} for ${userName} as Paid?`
+                        )
+                      }
+                      className="bg-gradient-to-br from-green-600 to-green-700 text-white px-4 py-2 rounded-lg shadow-sm hover:from-green-500 hover:to-green-600 flex items-center gap-1 text-sm"
+                    >
+                      <FaCheck className="text-green-300" /> Mark as Paid
+                    </motion.button>
+                  )}
+
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    onClick={() =>
+                      openModal(
+                        "delete",
+                        payment.userId,
+                        payment.id,
+                        `Delete payment of $${payment.discountedAmount.toFixed(
+                          2
+                        )} for ${userName}?`
+                      )
+                    }
+                    className="bg-gradient-to-br from-red-600 to-red-700 text-white px-4 py-2 rounded-lg shadow-sm hover:from-red-500 hover:to-red-600 flex items-center gap-1 text-sm"
+                  >
+                    <FaTrashAlt className="text-red-300" /> Delete
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           );
