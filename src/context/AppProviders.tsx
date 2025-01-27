@@ -1,20 +1,24 @@
+// src/context/AppProviders.tsx
 import { ReactNode } from "react";
+import AdminProvider from "./AdminProvider";
 import UsersProvider from "./UsersProvider";
 import PackagesProvider from "./PackagesProvider";
 import NotificationsProvider from "./NotificationsProvider";
 import SynchronizationComponent from "./SynchronizationComponent";
-
-const AppProviders = ({ children }: { children: ReactNode }) => {
-  return (
+import { TasksProvider } from "./TasksProvider";
+const AppProviders = ({ children }: { children: ReactNode }) => (
+  <AdminProvider>
     <UsersProvider>
       <PackagesProvider>
         <NotificationsProvider>
-          <SynchronizationComponent />
-          {children}
+          <TasksProvider>
+            <SynchronizationComponent />
+            {children}
+          </TasksProvider>
         </NotificationsProvider>
       </PackagesProvider>
     </UsersProvider>
-  );
-};
+  </AdminProvider>
+);
 
 export default AppProviders;

@@ -1,46 +1,40 @@
-// src/components/settings/CompletedTasks.tsx
 import React from "react";
+import { useTasks } from "../../context/TasksContext";
 
-type Task = {
-  id: number;
-  title: string;
-  dueDate: string;
-  status: string;
-};
-
-const CompletedTasks = () => {
-  const completedTasks: Task[] = [
-    {
-      id: 1,
-      title: "Monthly Cost Analysis",
-      dueDate: "2024-01-15",
-      status: "Completed",
-    },
-    {
-      id: 2,
-      title: "Review Profit Reports",
-      dueDate: "2024-01-20",
-      status: "Completed",
-    },
-  ];
+const CompletedTasksComponent: React.FC = () => {
+  const { completedTasks, deleteTask } = useTasks();
 
   return (
-    <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4 text-white">Completed Tasks</h2>
-      <div className="flex flex-col gap-4">
-        {completedTasks.map((task) => (
-          <div
-            key={task.id}
-            className="bg-gradient-to-r from-gray-900 to-gray-800 p-4 rounded-lg shadow-sm"
-          >
-            <p className="font-semibold text-white">{task.title}</p>
-            <p className="text-gray-400">Due: {task.dueDate}</p>
-            <p className="text-green-500">Completed</p>
-          </div>
-        ))}
-      </div>
+    <div className="p-6 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg shadow-md">
+      <h2 className="text-xl font-semibold text-white mb-6">Completed Tasks</h2>
+
+      {completedTasks.length > 0 ? (
+        <ul className="space-y-4">
+          {completedTasks.map((task) => (
+            <li
+              key={task.id} // Task ID is already a number
+              className="p-4 bg-gradient-to-b from-gray-800 to-gray-700 rounded-lg shadow-md flex justify-between items-center"
+            >
+              <div>
+                <h4 className="text-white font-semibold">{task.title}</h4>
+                <p className="text-sm text-gray-400">
+                  Priority: {task.priority}
+                </p>
+              </div>
+              <button
+                onClick={() => deleteTask(task.id)} // Task ID is already a number
+                className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-gray-400">No completed tasks yet.</p>
+      )}
     </div>
   );
 };
 
-export default CompletedTasks;
+export default CompletedTasksComponent;

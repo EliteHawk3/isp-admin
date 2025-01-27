@@ -14,6 +14,7 @@ import LoginPage from "./pages/LoginPage";
 import NotificationsPage from "./pages/NotifcationsPage";
 import AppProviders from "./context/AppProviders";
 import SettingsPage from "./pages/SettingsPage";
+
 const ProtectedRoute = ({
   isLoggedIn,
   children,
@@ -28,6 +29,8 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem("isLoggedIn") === "true";
   });
+
+  const [tempProfilePic, setTempProfilePic] = useState<string | null>(null); // Manage temp profile picture state
 
   useEffect(() => {
     // Sync state with localStorage if login state changes
@@ -52,7 +55,12 @@ const App = () => {
       <Router>
         <div className="h-screen bg-gray-950 flex">
           {/* Conditional Sidebar */}
-          {isLoggedIn && <Sidebar onLogout={handleLogout} />}
+          {isLoggedIn && (
+            <Sidebar
+              onLogout={handleLogout}
+              tempProfilePic={tempProfilePic} // Pass tempProfilePic to Sidebar
+            />
+          )}
 
           {/* Page Content */}
           <div className="flex-1 overflow-y-auto bg-gray-950">
@@ -114,11 +122,11 @@ const App = () => {
                 path="/settings"
                 element={
                   <ProtectedRoute isLoggedIn={isLoggedIn}>
-                    <SettingsPage />
+                    <SettingsPage setTempProfilePic={setTempProfilePic} />{" "}
+                    {/* Pass state setter */}
                   </ProtectedRoute>
                 }
               />
-
               {/* Fallback Route */}
               <Route
                 path="*"

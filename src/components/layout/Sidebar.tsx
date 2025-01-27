@@ -7,15 +7,17 @@ import {
   HiOutlineArchive,
 } from "react-icons/hi";
 import { NavLink } from "react-router-dom";
-import image10 from "../../assets/10.jpg";
 import { useState } from "react";
+import { useAdmin } from "../../context/AdminContext";
 
 type SidebarProps = {
   onLogout: () => void; // Function to handle logout
+  tempProfilePic: string | null; // Temporary profile picture
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onLogout, tempProfilePic }) => {
   const [showConfirm, setShowConfirm] = useState(false); // Track confirm dialog state
+  const { adminDetails } = useAdmin(); // Fetch admin details from context
 
   const menuItems = [
     { name: "Dashboard", path: "/", icon: <HiOutlineHome size={20} /> },
@@ -43,11 +45,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
       {/* Profile Section */}
       <div className="p-6 flex flex-col items-center bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 border-b border-gray-700">
         <img
-          src={image10}
+          src={
+            tempProfilePic || adminDetails.profilePic || "/default-avatar.jpg"
+          } // Show tempProfilePic if available
           alt="Admin Avatar"
           className="w-20 h-20 rounded-full mb-3 border-4 border-gray-600 shadow-md object-cover"
         />
-        <h2 className="text-white font-bold text-xl">Faisal</h2>
+        <h2 className="text-white font-bold text-xl">
+          {adminDetails.name || "N/A"}
+        </h2>
         <p className="text-green-400 text-sm mt-1">Admin</p>
       </div>
 
