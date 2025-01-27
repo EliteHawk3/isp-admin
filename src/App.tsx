@@ -10,10 +10,10 @@ import Dashboard from "./pages/Dashboard";
 import UsersPage from "./pages/UsersPage";
 import PackagesPage from "./pages/PackagesPage";
 import PaymentsPage from "./pages/PaymentsPage";
-import AdminProfilePage from "./pages/AdminProfilePage";
 import LoginPage from "./pages/LoginPage";
 import NotificationsPage from "./pages/NotifcationsPage";
 import AppProviders from "./context/AppProviders";
+import SettingsPage from "./pages/SettingsPage";
 const ProtectedRoute = ({
   isLoggedIn,
   children,
@@ -114,7 +114,7 @@ const App = () => {
                 path="/settings"
                 element={
                   <ProtectedRoute isLoggedIn={isLoggedIn}>
-                    <AdminProfilePage />
+                    <SettingsPage />
                   </ProtectedRoute>
                 }
               />
