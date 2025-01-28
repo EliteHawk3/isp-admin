@@ -75,7 +75,9 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     return () => {
-      Object.values(timeoutRefs.current).forEach(clearTimeout);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const currentTimeouts = timeoutRefs.current; //
+      Object.values(currentTimeouts).forEach(clearTimeout);
     };
   }, []);
   // Auto-hide success ribbon after animation
