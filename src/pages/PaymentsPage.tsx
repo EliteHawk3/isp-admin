@@ -139,7 +139,7 @@ const PaymentsPage = () => {
   };
 
   return (
-    <div className="flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
+    <div className="  h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6 overflow-y-auto custom-scrollbar ">
       {/* Payments Header */}
       <PaymentsHeader onDownload={handleDownload} />
 

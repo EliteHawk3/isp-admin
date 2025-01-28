@@ -115,7 +115,7 @@ const UsersPage: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6 min-h-screen">
+    <div className=" h-screen overflow-y-auto custom-scrollbar flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6 min-h-screen">
       <UsersHeader userCount={users.length} />
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar Section */}

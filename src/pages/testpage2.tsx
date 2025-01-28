@@ -33,10 +33,10 @@ import { usePackages } from "../context/PackagesContext";
 // import { useNotifications } from "../context/NotificationsContext";
 import { FaUsers, FaClock, FaBoxOpen, FaWallet } from "react-icons/fa";
 // import { useTasks } from "../context/TasksContext";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { User } from "../types/users"; // Import your types
 // import { Payment } from "../types/payments";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import PackageForm from "../components/packages/PackageForm";
 // import { Skeleton } from "@mantine/core";
 import { Package } from "../types/packages";
@@ -57,30 +57,24 @@ const Dashboard: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showPackageForm, setShowPackageForm] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeRibbons, setActiveRibbons] = useState<
-    { id: string; message: string }[]
-  >([]);
-  const timeoutRefs = useRef<Record<string, NodeJS.Timeout>>({});
-  const addRibbon = (message: string) => {
-    const id = Date.now().toString();
-    setActiveRibbons((prev) => [...prev, { id, message }]);
 
-    const timer = setTimeout(() => {
-      setActiveRibbons((prev) => prev.filter((ribbon) => ribbon.id !== id));
-      delete timeoutRefs.current[id];
-    }, 8000);
-
-    timeoutRefs.current[id] = timer;
-  };
-
-  useEffect(() => {
-    return () => {
-      Object.values(timeoutRefs.current).forEach(clearTimeout);
-    };
-  }, []);
+  const [showAddUserSuccessRibbon, setAddUserShowSuccessRibbon] =
+    useState(false);
+  const [showAddPackageSuccessRibbon, setAddPackageShowSuccessRibbon] =
+    useState(false);
+  const [showAddTaskSuccessRibbon, setAddTaskShowSuccessRibbon] =
+    useState(false);
   // Auto-hide success ribbon after animation
   // src/pages/Dashboard.tsx
-
+  useEffect(() => {
+    if (showAddTaskSuccessRibbon) {
+      // Remove any parentheses here if present
+      const timer = setTimeout(() => {
+        setAddTaskShowSuccessRibbon(false);
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [showAddTaskSuccessRibbon]);
   // Form submission handler
   const handleSubmit = (userData: User) => {
     if (selectedUser) {
@@ -90,12 +84,21 @@ const Dashboard: React.FC = () => {
     }
     setAddFormVisible(false);
     setSelectedUser(null);
-    addRibbon("User Added Successfully!");
+    setAddUserShowSuccessRibbon(true);
+
+    // Automatically hide the success ribbon after 4 seconds
+    setTimeout(() => {
+      setAddUserShowSuccessRibbon(false);
+    }, 8000);
   };
   const handleAddPackage = (newPackage: Package) => {
     setPackages((prev) => [{ ...newPackage, users: 0 }, ...prev]);
     setShowPackageForm(false);
-    addRibbon("Package Added Successfully!");
+    setAddPackageShowSuccessRibbon(true);
+
+    setTimeout(() => {
+      setAddPackageShowSuccessRibbon(false);
+    }, 8000);
   };
 
   // const totalNotifications = notifications.length;
@@ -308,7 +311,7 @@ const Dashboard: React.FC = () => {
   }, [users, granularity]);
 
   return (
-    <div className="p-6 space-y-8 h-full w-full pb-72 bg-gray-900 overflow-y-auto custom-scrollbar">
+    <div className="p-6 space-y-8 h-full w-full pb-72 bg-gray-900">
       <DashboardHeader />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 ">
         <StatCard
@@ -383,31 +386,10 @@ const Dashboard: React.FC = () => {
         <TaskCreationModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onTaskAdded={() => addRibbon("Task Added Successfully!")}
+          onTaskAdded={() => setAddTaskShowSuccessRibbon(true)}
         />
       </div>
-      <AnimatePresence>
-        {activeRibbons.map((ribbon, index) => (
-          <motion.div
-            key={ribbon.id}
-            initial={{ x: 300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ opacity: 0, x: 300 }}
-            transition={{ duration: 0.3 }}
-            className="fixed right-5 bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center gap-4"
-            style={{ top: 20 + index * 80 }}
-          >
-            <span>{ribbon.message}</span>
-            <motion.div
-              className="h-1 bg-white rounded-full"
-              style={{ width: "100%" }}
-              initial={{ scaleX: 1 }}
-              animate={{ scaleX: 0 }}
-              transition={{ duration: 8, ease: "linear" }}
-            />
-          </motion.div>
-        ))}
-      </AnimatePresence>
+
       {/* Reuse UsersForm */}
       {isAddFormVisible && (
         <UsersForm
@@ -428,6 +410,46 @@ const Dashboard: React.FC = () => {
             onSubmit={handleAddPackage}
             onCancel={() => setShowPackageForm(false)}
           />
+        </div>
+      )}
+
+      {/* Success Ribbon User*/}
+      {showAddUserSuccessRibbon && (
+        <div className="fixed top-5 right-5 bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center gap-4">
+          <span>User Added Successfully!</span>
+          <motion.div
+            className="h-1 bg-white rounded-full"
+            style={{ width: "100%" }}
+            initial={{ scaleX: 1 }}
+            animate={{ scaleX: 0 }}
+            transition={{ duration: 8 }}
+          ></motion.div>
+        </div>
+      )}
+      {/* Success Ribbon Package */}
+      {showAddPackageSuccessRibbon && (
+        <div className="fixed top-5 right-5 bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center gap-4">
+          <span>Package Added Successfully!</span>
+          <motion.div
+            className="h-1 bg-white rounded-full"
+            style={{ width: "100%" }}
+            initial={{ scaleX: 1 }}
+            animate={{ scaleX: 0 }}
+            transition={{ duration: 8 }}
+          ></motion.div>
+        </div>
+      )}
+      {/* Success Ribbon */}
+      {showAddTaskSuccessRibbon && (
+        <div className="fixed top-5 right-5 bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center gap-4">
+          <span>Task Added Successfully!</span>
+          <motion.div
+            className="h-1 bg-white rounded-full"
+            style={{ width: "100%" }}
+            initial={{ scaleX: 1 }}
+            animate={{ scaleX: 0 }}
+            transition={{ duration: 8 }}
+          ></motion.div>
         </div>
       )}
 

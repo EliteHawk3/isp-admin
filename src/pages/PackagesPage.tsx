@@ -86,7 +86,7 @@ const PackagesPage = () => {
   const profit = totalIncome - providerCost;
 
   return (
-    <div className="flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
+    <div className=" h-screen overflow-y-auto custom-scrollbar flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
       {/* Header */}
       <PackagesHeader onAdd={handleAddPackage} />
 

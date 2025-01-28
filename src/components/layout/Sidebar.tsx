@@ -20,7 +20,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, tempProfilePic }) => {
   const { adminDetails } = useAdmin(); // Fetch admin details from context
 
   const menuItems = [
-    { name: "Dashboard", path: "/", icon: <HiOutlineHome size={20} /> },
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: <HiOutlineHome size={20} />,
+    },
     { name: "Users", path: "/users", icon: <HiOutlineUsers size={20} /> },
     {
       name: "Packages",

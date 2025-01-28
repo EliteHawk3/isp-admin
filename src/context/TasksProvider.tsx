@@ -43,15 +43,22 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
     setTasks((prev) => {
       const task = prev.find((t) => t.id === id);
       if (task) {
-        setCompletedTasks((completed) => [
-          ...completed,
-          {
-            ...task,
-            status: "Completed",
-            progress: 100,
-            updatedAt: new Date().toISOString(),
-          },
-        ]);
+        setCompletedTasks((completed) => {
+          // Check if the task is already in completedTasks
+          if (completed.some((t) => t.id === id)) {
+            return completed;
+          }
+          // Add the task if not present
+          return [
+            ...completed,
+            {
+              ...task,
+              status: "Completed",
+              progress: 100,
+              updatedAt: new Date().toISOString(),
+            },
+          ];
+        });
       }
       return prev.filter((t) => t.id !== id);
     });

@@ -25,7 +25,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
 
     // Authentication Logic
-    if (username === correctCredentials.username && password === correctCredentials.password) {
+    if (
+      username === correctCredentials.username &&
+      password === correctCredentials.password
+    ) {
       setErrorMessage(""); // Clear error message
       onLogin(); // Call the onLogin prop to notify the parent component
     } else {
@@ -34,13 +37,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+    <div className="min-h-screen overflow-y-auto custom-scrollbar bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
       <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold text-white text-center mb-6">Login</h1>
+        <h1 className="text-2xl font-bold text-white text-center mb-6">
+          Login
+        </h1>
         <form onSubmit={handleLogin} className="space-y-6">
           {/* Username Field */}
           <div>
-            <label className="block text-gray-300 font-medium mb-2" htmlFor="username">
+            <label
+              className="block text-gray-300 font-medium mb-2"
+              htmlFor="username"
+            >
               Username
             </label>
             <input
@@ -55,7 +63,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
           {/* Password Field */}
           <div>
-            <label className="block text-gray-300 font-medium mb-2" htmlFor="password">
+            <label
+              className="block text-gray-300 font-medium mb-2"
+              htmlFor="password"
+            >
               Password
             </label>
             <input

@@ -73,3 +73,178 @@ h1 {
 .animate-professionalIcon {
   animation: professionalIcon 2.5s infinite ease-in-out;
 }
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-10px) translateX(5px);
+  }
+  50% {
+    transform: translateY(5px) translateX(-5px);
+  }
+  75% {
+    transform: translateY(-5px) translateX(10px);
+  }
+}
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-5deg) scale(1.1);
+  }
+  75% {
+    transform: rotate(5deg) scale(1.1);
+  }
+}
+
+.animate-wiggle {
+  animation: wiggle 1.5s ease-in-out infinite;
+}
+:root {
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+  --color-purple: #8b5cf6;
+  --color-gray: #4b5563;
+  --electric-cyan: #00ff9d;
+  --holographic-teal: #00c9a7;
+  --metallic-purple: #a277ff;
+  --deep-indigo: #6d3bff;
+  --neon-coral: #ff3b6d;
+  --glowing-crimson: #ff144d;
+}
+
+/* Calendar Overrides */
+.fc .fc-toolbar-title {
+  @apply text-gray-300 font-semibold text-lg;
+}
+
+.fc .fc-button {
+  @apply bg-gray-700 border-gray-600 text-gray-300 rounded-lg px-3 py-2 
+         transition-colors hover:bg-gray-600 focus:ring-2 focus:ring-blue-400 
+         focus:outline-none shadow-sm;
+}
+
+.fc .fc-button-active {
+  @apply bg-blue-600 border-blue-500 text-white;
+}
+
+.fc .fc-daygrid-day {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.fc .fc-daygrid-day-top {
+  @apply justify-center p-2;
+}
+
+.fc .fc-daygrid-day-number {
+  @apply text-gray-400 hover:text-gray-200;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  @apply bg-gray-700/40;
+}
+
+.day-header {
+  @apply text-gray-400 font-medium uppercase text-xs py-2 border-b border-gray-700;
+}
+
+.custom-event {
+  @apply rounded-lg border border-opacity-50 m-1 overflow-hidden;
+}
+
+.fc-event-content {
+  @apply p-1.5;
+}
+
+.fc .fc-scrollgrid {
+  @apply border-gray-700;
+}
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.stat-card {
+  @apply relative overflow-hidden bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  @apply border-gray-500;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.progress-bar {
+  @apply h-2 rounded-full transition-all duration-500 ease-out;
+}
+
+.icon-container {
+  @apply flex items-center justify-center w-12 h-12 rounded-xl backdrop-blur-sm;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover .icon-container {
+  transform: rotate(8deg) scale(1.1);
+}
+@keyframes pulse-opacity {
+  0% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes text-pulse {
+  0% {
+    opacity: 0.8;
+    background-position: 0% 50%;
+  }
+  50% {
+    opacity: 1;
+    background-position: 100% 50%;
+  }
+  100% {
+    opacity: 0.8;
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes gradient-glows {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+.animate-text-pulse {
+  animation: text-pulse 15s ease-in-out infinite;
+}
+
+.group:hover::before {
+  animation: gradient-glows 15s ease-in-out infinite;
+}
