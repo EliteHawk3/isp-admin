@@ -17,6 +17,9 @@ export const mockNotifications: Notification[] = [
         packageId: "package1",
         installationCost: 50,
         discount: 10,
+        active: true,
+        password: "12345123@john", // Example password
+
         discountType: "everytime",
         payments: [
           {
@@ -28,6 +31,9 @@ export const mockNotifications: Notification[] = [
             date: "2023-12-10",
             dueDate: "2023-12-20",
             paidDate: undefined,
+            packageName: "50 Mbps Plan", // Adding package name
+            costAtPaymentTime: 30, // Cost at the time of payment
+            discountAtPaymentTime: 10, // Discount at the time of payment
           },
         ],
         createdAt: "2023-01-01",
@@ -52,6 +58,9 @@ export const mockNotifications: Notification[] = [
         status: "Overdue",
         date: "2023-12-10",
         dueDate: "2023-12-20",
+        packageName: "50 Mbps Plan", // Adding package name here
+        costAtPaymentTime: 30, // Including cost at payment time
+        discountAtPaymentTime: 10, // Including discount at payment time
       },
     ],
   },
@@ -70,6 +79,8 @@ export const mockNotifications: Notification[] = [
         address: "456 Elm Street",
         packageId: "package2",
         installationCost: 70,
+        active: true,
+        password: "12345123@john", // Example password
         discount: 15,
         discountType: "one-time",
         payments: [
@@ -82,6 +93,9 @@ export const mockNotifications: Notification[] = [
             date: "2023-12-01",
             dueDate: "2023-12-10",
             paidDate: "2023-12-05",
+            packageName: "100 Mbps Plan", // Adding package name
+            costAtPaymentTime: 50, // Cost at the time of payment
+            discountAtPaymentTime: 15, // Discount at the time of payment
           },
         ],
         createdAt: "2022-05-01",
@@ -106,7 +120,9 @@ export const mockNotifications: Notification[] = [
         status: "Paid",
         date: "2023-12-01",
         dueDate: "2023-12-10",
-        paidDate: "2023-12-05",
+        packageName: "100 Mbps Plan", // Adding package name here
+        costAtPaymentTime: 50, // Including cost at payment time
+        discountAtPaymentTime: 15, // Including discount at payment time
       },
     ],
   },

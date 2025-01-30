@@ -171,13 +171,12 @@ const UsersForm: React.FC<UsersFormProps> = ({
       packageId,
       discount: parseFloat(discount),
       discountType,
-      role: user?.role || "user",
       payments: user?.payments || [],
       createdAt: user?.createdAt || new Date().toISOString(),
       lastPaidDate: user?.lastPaidDate || "",
       dueDate,
       active: user?.active ?? true, // Keep existing status or default to active
-
+      role: "user", // Default to 'user' and can't change via the form
       password: user ? password : "", // Password will be auto-generated in backend
     };
 

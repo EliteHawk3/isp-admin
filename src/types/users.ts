@@ -19,5 +19,6 @@ export interface User {
   lastPaidDate?: string; // ISO date string, optional
   dueDate: string; // ISO date string
   password: string; // Password is now mandatory
+  role: "user" | "admin";
   active: boolean; // Indicates if the user is active or inactive
 }
