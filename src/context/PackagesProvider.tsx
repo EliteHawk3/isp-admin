@@ -3,7 +3,6 @@ import { useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import { PackagesContext } from "./PackagesContext";
 import { Package } from "../types/packages";
 import { packages as initialPackages } from "../data/packages"; // Importing mock data
-
 const PackagesProvider = ({ children }: { children: ReactNode }) => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [totalMBs, setTotalMBs] = useState<number>(500); // Default Total MBs
@@ -14,7 +13,6 @@ const PackagesProvider = ({ children }: { children: ReactNode }) => {
    */
   const fetchPackages = useCallback(async () => {
     try {
-      // Check if packages are stored in localStorage
       const storedPackages = localStorage.getItem("packages");
       if (storedPackages) {
         const parsedPackages: Package[] = JSON.parse(storedPackages);
@@ -26,27 +24,15 @@ const PackagesProvider = ({ children }: { children: ReactNode }) => {
           );
         } else {
           // If the stored array is empty, load mock data
-          const initializedPackages = initialPackages.map((pkg) => ({
-            ...pkg,
-            users: 0, // Ensure users count starts at 0
-          }));
-          setPackages(initializedPackages);
+          setPackages(initialPackages.map((pkg) => ({ ...pkg, users: 0 })));
           console.log(
-            "PackagesProvider: Loaded packages from mock data due to empty localStorage.",
-            initializedPackages
+            "PackagesProvider: Loaded packages from mock data due to empty localStorage."
           );
         }
       } else {
         // If no packages in localStorage, load mock data
-        const initializedPackages = initialPackages.map((pkg) => ({
-          ...pkg,
-          users: 0, // Ensure users count starts at 0
-        }));
-        setPackages(initializedPackages);
-        console.log(
-          "PackagesProvider: Loaded packages from mock data:",
-          initializedPackages
-        );
+        setPackages(initialPackages.map((pkg) => ({ ...pkg, users: 0 })));
+        console.log("PackagesProvider: Loaded packages from mock data.");
       }
     } catch (error) {
       console.error("Error fetching packages:", error);
@@ -64,7 +50,6 @@ const PackagesProvider = ({ children }: { children: ReactNode }) => {
     },
     [packages]
   );
-
   /**
    * Edit an existing package.
    */
@@ -90,37 +75,6 @@ const PackagesProvider = ({ children }: { children: ReactNode }) => {
     },
     [packages]
   );
-
-  /**
-   * Update user count for a specific package.
-   */
-  // const updatePackageUsers = useCallback(
-  //   (packageId: string, userCount: number) => {
-  //     const updatedPackages = packages.map((pkg) =>
-  //       pkg.id === packageId ? { ...pkg, users: userCount } : pkg
-  //     );
-  //     setPackages(updatedPackages);
-  //     console.log(
-  //       `PackagesProvider: Updated user count for package ${packageId}: ${userCount}`
-  //     );
-  //   },
-  //   [packages]
-  // );
-
-  /**
-   * Update package prices in bulk.
-   */
-  // const updatePackagePrices = useCallback(
-  //   (updatedPrices: { id: string; cost: number }[]) => {
-  //     const updatedPackages = packages.map((pkg) => {
-  //       const priceUpdate = updatedPrices.find((price) => price.id === pkg.id);
-  //       return priceUpdate ? { ...pkg, cost: priceUpdate.cost } : pkg;
-  //     });
-  //     setPackages(updatedPackages);
-  //     console.log("PackagesProvider: Updated package prices:", updatedPrices);
-  //   },
-  //   [packages]
-  // );
 
   /**
    * Initialize packages on mount.
@@ -159,8 +113,6 @@ const PackagesProvider = ({ children }: { children: ReactNode }) => {
       addPackage,
       editPackage,
       deletePackage,
-      // updatePackageUsers,
-      // updatePackagePrices,
     }),
     [
       packages,

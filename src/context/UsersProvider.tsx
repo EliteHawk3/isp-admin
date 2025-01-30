@@ -10,12 +10,24 @@ export const UsersProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
+  // Utility function to generate passwords
+  const generatePassword = (cnic: string, name: string): string => {
+    const lastFourCnic = cnic.replace(/\D/g, "").slice(-4); // ✅ Extract last 4 digits of CNIC
+
+    const cleanName = name.replace(/[^A-Za-z]/g, "").toLowerCase(); // ✅ Remove non-letters
+    const firstFiveChars = cleanName.slice(0, 5); // ✅ Get first 5 characters (or less if name is short)
+
+    const symbols = ["#", "$", "%", "&", "*"]; // ✅ Predefined set of symbols
+    const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)]; // ✅ Pick a random symbol
+
+    return `${lastFourCnic}${randomSymbol}${firstFiveChars}`; // ✅ Combine elements
+  };
+
   /**
    * Fetch users and audit logs from localStorage or initialize from mock data.
    */
   const fetchUsers = useCallback(async () => {
     try {
-      // Fetch users from localStorage
       const storedUsers = localStorage.getItem("users");
       if (storedUsers) {
         const parsedUsers: User[] = JSON.parse(storedUsers);
@@ -39,7 +51,6 @@ export const UsersProvider = ({ children }: { children: ReactNode }) => {
         );
       }
 
-      // Fetch auditLogs from localStorage
       const storedAuditLogs = localStorage.getItem("auditLogs");
       if (storedAuditLogs) {
         const parsedAuditLogs: AuditLog[] = JSON.parse(storedAuditLogs);
@@ -49,7 +60,7 @@ export const UsersProvider = ({ children }: { children: ReactNode }) => {
           parsedAuditLogs
         );
       } else {
-        setAuditLogs([]); // Initialize as empty array if not present
+        setAuditLogs([]);
         console.log("UsersProvider: Initialized empty audit logs.");
       }
     } catch (error) {
@@ -62,24 +73,20 @@ export const UsersProvider = ({ children }: { children: ReactNode }) => {
    */
   const addUser = useCallback(
     (newUser: User) => {
-      const updatedUsers: User[] = [
-        ...users,
-        { ...newUser, payments: newUser.payments || [] },
-      ];
+      const password = generatePassword(newUser.cnic, newUser.name);
+      const updatedUser = { ...newUser, password, active: true };
+      const updatedUsers = [...users, updatedUser];
       setUsers(updatedUsers);
-      console.log("UsersProvider: Added new user:", newUser);
+      console.log("UsersProvider: Added new user:", updatedUser);
 
-      // Update audit logs
       const newAuditLog: AuditLog = {
         userId: newUser.id,
         action: "Add User",
         previousStatus: "N/A",
         newStatus: "User Added",
         timestamp: new Date().toISOString(),
-        // 'amount' is optional and omitted here
       };
       setAuditLogs((prevLogs) => [...prevLogs, newAuditLog]);
-      console.log("UsersProvider: Added audit log for new user:", newAuditLog);
     },
     [users]
   );
@@ -89,68 +96,155 @@ export const UsersProvider = ({ children }: { children: ReactNode }) => {
    */
   const editUser = useCallback(
     (updatedUser: User) => {
-      const updatedUsers: User[] = users.map((user: User) =>
+      const updatedUsers = users.map((user) =>
         user.id === updatedUser.id ? updatedUser : user
       );
       setUsers(updatedUsers);
-      console.log("UsersProvider: Edited user:", updatedUser);
 
-      // Update audit logs
       const newAuditLog: AuditLog = {
         userId: updatedUser.id,
         action: "Edit User",
         previousStatus: "N/A",
         newStatus: "User Edited",
         timestamp: new Date().toISOString(),
-        // 'amount' is optional and omitted here
       };
       setAuditLogs((prevLogs) => [...prevLogs, newAuditLog]);
-      console.log(
-        "UsersProvider: Added audit log for edited user:",
-        newAuditLog
-      );
     },
     [users]
   );
 
+  /**
+   * Toggle user active status.
+   */
+  const toggleUserActiveStatus = useCallback(
+    (userId: string, isActive: boolean) => {
+      const updatedUsers = users.map((user) =>
+        user.id === userId ? { ...user, active: isActive } : user
+      );
+      setUsers(updatedUsers);
+
+      const newAuditLog: AuditLog = {
+        userId,
+        action: isActive ? "Activate User" : "Deactivate User",
+        previousStatus: isActive ? "Inactive" : "Active",
+        newStatus: isActive ? "Active" : "Inactive",
+        timestamp: new Date().toISOString(),
+      };
+      setAuditLogs((prevLogs) => [...prevLogs, newAuditLog]);
+    },
+    [users]
+  );
   /**
    * Delete a user.
    */
   const deleteUser = useCallback(
     (userId: string) => {
-      const userToDelete = users.find((user: User) => user.id === userId);
-      if (userToDelete) {
-        const updatedUsers: User[] = users.filter(
-          (user: User) => user.id !== userId
-        );
-        setUsers(updatedUsers);
-        console.log(`UsersProvider: Deleted user with id: ${userId}`);
+      const userToRemove = users.find((user) => user.id === userId);
+      if (!userToRemove) {
+        console.warn(`User with ID ${userId} not found.`);
+        return;
+      }
 
-        // Update audit logs
-        const newAuditLog: AuditLog = {
+      // Archive payments for the user before deletion
+      const archivedPayments = userToRemove.payments.map((payment) => ({
+        ...payment,
+        archived: true,
+      }));
+
+      // Store archived payments in localStorage to prevent regeneration
+      const deletedPayments = JSON.parse(
+        localStorage.getItem("deletedPayments") || "[]"
+      );
+      const newDeletedPayments = [
+        ...deletedPayments,
+        ...archivedPayments.map((p) => ({
+          userId,
+          paymentId: p.id,
+          timestamp: Date.now(),
+        })),
+      ];
+      localStorage.setItem(
+        "deletedPayments",
+        JSON.stringify(newDeletedPayments)
+      );
+
+      // Remove user from state
+      const updatedUsers = users.filter((user) => user.id !== userId);
+      setUsers(updatedUsers);
+
+      // Add audit logs
+      setAuditLogs((prevLogs) => [
+        ...prevLogs,
+        {
           userId,
           action: "Delete User",
           previousStatus: "Active",
-          newStatus: "User Deleted",
+          newStatus: "Deleted",
           timestamp: new Date().toISOString(),
-          // 'amount' is optional and omitted here
-        };
-        setAuditLogs((prevLogs) => [...prevLogs, newAuditLog]);
-        console.log(
-          "UsersProvider: Added audit log for deleted user:",
-          newAuditLog
-        );
-      } else {
-        console.warn(
-          `UsersProvider: Attempted to delete non-existent user with id: ${userId}`
-        );
-      }
+        },
+        {
+          userId,
+          action: "Archive Payments",
+          previousStatus: "Active",
+          newStatus: "Archived",
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      console.log(
+        `UsersProvider: Deleted user with ID ${userId} and archived their payments.`
+      );
     },
-    [users]
+    [users, setUsers, setAuditLogs]
+  );
+  const deletePayment = useCallback(
+    (userId: string, paymentId: string) => {
+      setUsers((prevUsers) => {
+        const updatedUsers = prevUsers.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                payments: user.payments.filter(
+                  (payment) => payment.id !== paymentId
+                ),
+              }
+            : user
+        );
+
+        // Store deleted payment ID in localStorage to prevent re-creation
+        const deletedPayments = JSON.parse(
+          localStorage.getItem("deletedPayments") || "[]"
+        );
+        deletedPayments.push({ userId, paymentId, timestamp: Date.now() });
+        localStorage.setItem(
+          "deletedPayments",
+          JSON.stringify(deletedPayments)
+        );
+
+        return updatedUsers;
+      });
+
+      // Add audit log
+      setAuditLogs((prevLogs) => [
+        ...prevLogs,
+        {
+          userId,
+          action: "Delete Payment",
+          previousStatus: "Existing",
+          newStatus: "Deleted",
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      console.log(
+        `UsersProvider: Deleted payment ${paymentId} for user ${userId}`
+      );
+    },
+    [setUsers, setAuditLogs]
   );
 
   /**
-   * Mark payment as paid.
+   * Mark a payment as paid.
    */
   const markAsPaid = useCallback(
     (
@@ -159,41 +253,44 @@ export const UsersProvider = ({ children }: { children: ReactNode }) => {
       paymentDate: string,
       confirmedAmount: number
     ) => {
-      const updatedUsers: User[] = users.map((user: User) =>
-        user.id === userId && user.payments
-          ? {
-              ...user,
-              payments: user.payments.map((payment: Payment) =>
-                payment.id === paymentId
-                  ? {
-                      ...payment,
-                      status: "Paid", // Valid union type
-                      paidDate: paymentDate,
-                      discountedAmount: confirmedAmount,
-                    }
-                  : payment
-              ),
-            }
-          : user
-      );
-      setUsers(updatedUsers);
-      console.log(
-        `UsersProvider: Marked payment ${paymentId} as Paid for user ${userId}`
-      );
+      const updatedUsers: User[] = users.map((user) => {
+        if (user.id !== userId) return user; // Only modify the target user
 
-      // Update audit logs
+        const updatedPayments: Payment[] = user.payments.map((payment) => {
+          if (payment.id !== paymentId) return payment; // Only modify the target payment
+
+          if (payment.status === "Paid") {
+            console.warn(`Payment ${paymentId} is already marked as Paid.`);
+            return payment; // Avoid re-updating already paid payments
+          }
+
+          // Update payment with new details while adhering to the Payment type
+          return {
+            ...payment,
+            status: "Paid",
+            paidDate: paymentDate, // ISO string for when the payment was made
+            discountedAmount: confirmedAmount, // Final confirmed payment amount
+          };
+        });
+
+        return { ...user, payments: updatedPayments };
+      });
+
+      setUsers(updatedUsers);
+
+      // Create a new audit log entry
       const newAuditLog: AuditLog = {
         userId,
         action: "Mark as Paid",
         previousStatus: "Pending",
         newStatus: "Paid",
-        amount: confirmedAmount, // Ensure 'amount' is part of AuditLog
+        amount: confirmedAmount,
         timestamp: new Date().toISOString(),
       };
+
       setAuditLogs((prevLogs) => [...prevLogs, newAuditLog]);
       console.log(
-        "UsersProvider: Added audit log for payment marked as paid:",
-        newAuditLog
+        `UsersProvider: Payment ${paymentId} marked as Paid for user ${userId}`
       );
     },
     [users]
@@ -208,17 +305,29 @@ export const UsersProvider = ({ children }: { children: ReactNode }) => {
         user.id === userId && user.payments
           ? {
               ...user,
-              payments: user.payments.map((payment: Payment) =>
-                payment.id === paymentId
-                  ? { ...payment, status: "Pending", paidDate: undefined } // Valid union type
-                  : payment
-              ),
+              payments: user.payments.map((payment: Payment) => {
+                if (payment.id !== paymentId) return payment; // No change
+
+                const now = new Date();
+                const dueDate = new Date(payment.dueDate); // Keep original due date
+
+                return {
+                  ...payment,
+                  status: now > dueDate ? "Overdue" : "Pending", // ✅ Set Overdue if past due date
+                  paidDate: undefined, // Remove paid date
+                  dueDate: payment.dueDate, // Keep the same due date
+                };
+              }),
             }
           : user
       );
       setUsers(updatedUsers);
       console.log(
-        `UsersProvider: Reverted payment ${paymentId} to Pending for user ${userId}`
+        `UsersProvider: Reverted payment ${paymentId} to ${
+          updatedUsers
+            .find((u) => u.id === userId)
+            ?.payments.find((p) => p.id === paymentId)?.status
+        } for user ${userId}`
       );
 
       // Update audit logs
@@ -226,42 +335,20 @@ export const UsersProvider = ({ children }: { children: ReactNode }) => {
         userId,
         action: "Revert Payment",
         previousStatus: "Paid",
-        newStatus: "Pending",
+        newStatus:
+          updatedUsers
+            .find((u) => u.id === userId)
+            ?.payments.find((p) => p.id === paymentId)?.status || "Pending",
         timestamp: new Date().toISOString(),
-        // 'amount' is optional and omitted here
       };
       setAuditLogs((prevLogs) => [...prevLogs, newAuditLog]);
       console.log(
-        "UsersProvider: Added audit log for payment reverted to pending:",
+        "UsersProvider: Added audit log for payment reverted:",
         newAuditLog
       );
     },
     [users]
   );
-
-  /**
-   * Update user's payments with a callback function.
-   * @param userId - ID of the user whose payments are to be updated.
-   * @param updateFn - Function that receives and modifies the user's payments.
-   */
-  // const updateUserPayments = useCallback(
-  //   (
-  //     userId: string,
-  //     updateFn: (payments: User["payments"]) => User["payments"]
-  //   ) => {
-  //     setUsers((prevUsers) =>
-  //       prevUsers.map((user) =>
-  //         user.id === userId
-  //           ? { ...user, payments: updateFn(user.payments) }
-  //           : user
-  //       )
-  //     );
-  //     console.log(
-  //       `UsersProvider: Updated payments for user with id: ${userId}`
-  //     );
-  //   },
-  //   []
-  // );
 
   /**
    * Initialize users and auditLogs on mount.
@@ -305,10 +392,11 @@ export const UsersProvider = ({ children }: { children: ReactNode }) => {
       addUser,
       editUser,
       deleteUser,
+      toggleUserActiveStatus,
       markAsPaid,
+      deletePayment,
       markAsUnpaid,
       auditLogs,
-      // updateUserPayments, // Expose the updateUserPayments function
     }),
     [
       users,
@@ -316,10 +404,11 @@ export const UsersProvider = ({ children }: { children: ReactNode }) => {
       addUser,
       editUser,
       deleteUser,
+      deletePayment,
       markAsPaid,
       markAsUnpaid,
       auditLogs,
-      // updateUserPayments,
+      toggleUserActiveStatus,
     ]
   );
 

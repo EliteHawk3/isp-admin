@@ -16,7 +16,10 @@ export const users: User[] = [
         id: "p1-2024-12",
         userId: "1",
         packageId: "1",
+        packageName: "Basic Plan",
+        costAtPaymentTime: 10,
         discountedAmount: 8, // 10 - 2 (discount)
+        discountAtPaymentTime: 2,
         status: "Paid",
         date: "2024-12-01",
         paidDate: "2024-12-05",
@@ -26,7 +29,10 @@ export const users: User[] = [
         id: "p1-2025-01",
         userId: "1",
         packageId: "1",
-        discountedAmount: 8,
+        packageName: "Basic Plan",
+        costAtPaymentTime: 10,
+        discountedAmount: 8, // 10 - 2 (discount)
+        discountAtPaymentTime: 2,
         status: "Pending",
         date: "2025-01-15",
         dueDate: "2025-02-01",
@@ -36,6 +42,8 @@ export const users: User[] = [
     lastPaidDate: "2024-12-05",
     dueDate: "2025-02-01",
     role: "user",
+    password: "12345123@john", // Example password
+    active: true,
   },
   {
     id: "2",
@@ -52,7 +60,10 @@ export const users: User[] = [
         id: "p2-2024-11",
         userId: "2",
         packageId: "2",
-        discountedAmount: 10,
+        packageName: "Standard Plan",
+        costAtPaymentTime: 15,
+        discountedAmount: 10, // 15 - 5 (discount)
+        discountAtPaymentTime: 5,
         status: "Paid",
         date: "2024-11-01",
         paidDate: "2024-11-03",
@@ -62,7 +73,10 @@ export const users: User[] = [
         id: "p2-2024-12",
         userId: "2",
         packageId: "2",
-        discountedAmount: 10,
+        packageName: "Standard Plan",
+        costAtPaymentTime: 15,
+        discountedAmount: 10, // 15 - 5 (discount)
+        discountAtPaymentTime: 5,
         status: "Paid",
         date: "2024-12-01",
         paidDate: "2024-12-05",
@@ -72,7 +86,10 @@ export const users: User[] = [
         id: "p2-2025-01",
         userId: "2",
         packageId: "2",
-        discountedAmount: 10,
+        packageName: "Standard Plan",
+        costAtPaymentTime: 15,
+        discountedAmount: 10, // 15 - 5 (discount)
+        discountAtPaymentTime: 5,
         status: "Paid",
         date: "2025-01-10",
         paidDate: "2025-01-10",
@@ -83,6 +100,8 @@ export const users: User[] = [
     lastPaidDate: "2025-01-10",
     dueDate: "2025-02-10",
     role: "user",
+    password: "67890987@jane", // Example password
+    active: true,
   },
   {
     id: "3",
@@ -99,7 +118,10 @@ export const users: User[] = [
         id: "p3-2024-12",
         userId: "3",
         packageId: "3",
-        discountedAmount: 20,
+        packageName: "Premium Plan",
+        costAtPaymentTime: 20,
+        discountedAmount: 20, // No discount applied
+        discountAtPaymentTime: 0,
         status: "Overdue",
         date: "2024-12-01",
         dueDate: "2024-12-31",
@@ -108,7 +130,10 @@ export const users: User[] = [
         id: "p3-2025-01",
         userId: "3",
         packageId: "3",
-        discountedAmount: 20,
+        packageName: "Premium Plan",
+        costAtPaymentTime: 20,
+        discountedAmount: 20, // No discount applied
+        discountAtPaymentTime: 0,
         status: "Overdue",
         date: "2025-01-01",
         dueDate: "2025-02-05",
@@ -118,5 +143,7 @@ export const users: User[] = [
     lastPaidDate: undefined,
     dueDate: "2025-02-05",
     role: "user",
+    password: "11223456@ali", // Example password
+    active: true,
   },
 ];

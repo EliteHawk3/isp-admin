@@ -52,16 +52,42 @@ const UsersPage: React.FC = () => {
   }, [selectedUserId, selectedUser]);
 
   // Sidebar counts
+  // Get current month and year
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  // Total users count (does not depend on payments)
   const allCount = users.length;
-  const paidCount = users.filter((u) =>
-    u.payments?.some((p) => p.status === "Paid")
+
+  // Compute counts based on current month's payments
+  const pendingCount = users.filter((user) =>
+    user.payments?.some(
+      (payment) =>
+        new Date(payment.date).getMonth() === currentMonth &&
+        new Date(payment.date).getFullYear() === currentYear &&
+        payment.status === "Pending"
+    )
   ).length;
-  const pendingCount = users.filter((u) =>
-    u.payments?.some((p) => p.status === "Pending")
+
+  const paidCount = users.filter((user) =>
+    user.payments?.some(
+      (payment) =>
+        new Date(payment.date).getMonth() === currentMonth &&
+        new Date(payment.date).getFullYear() === currentYear &&
+        payment.status === "Paid"
+    )
   ).length;
-  const overdueCount = users.filter((u) =>
-    u.payments?.some((p) => p.status === "Overdue")
+
+  const overdueCount = users.filter((user) =>
+    user.payments?.some(
+      (payment) =>
+        new Date(payment.date).getMonth() === currentMonth &&
+        new Date(payment.date).getFullYear() === currentYear &&
+        payment.status === "Overdue"
+    )
   ).length;
+  // New: Count users who have past overdue/pending payments
 
   // Clicking "Add User" in the sidebar clears any selection and opens form in add mode
   const handleAddUser = () => {
@@ -98,25 +124,51 @@ const UsersPage: React.FC = () => {
       user.phone?.toLowerCase().includes(query) ||
       user.cnic?.toLowerCase().includes(query);
 
+    // Get payments from the current month
+    const currentMonthPayments = user.payments?.filter((payment) => {
+      const paymentDate = new Date(payment.date);
+      return (
+        paymentDate.getMonth() === currentMonth &&
+        paymentDate.getFullYear() === currentYear
+      );
+    });
+
+    // Get past overdue payments
+    const pastDuePayments = user.payments?.filter((payment) => {
+      const paymentDate = new Date(payment.date);
+      return (
+        paymentDate.getMonth() < currentMonth &&
+        paymentDate.getFullYear() <= currentYear &&
+        (payment.status === "Pending" || payment.status === "Overdue")
+      );
+    });
+
     let matchesCategory = true;
     if (activeCategory === "paid") {
       matchesCategory =
-        user.payments?.some((p) => p.status === "Paid") ?? false;
+        currentMonthPayments?.some((p) => p.status === "Paid") ?? false;
     } else if (activeCategory === "pending") {
       matchesCategory =
-        user.payments?.some((p) => p.status === "Pending") ?? false;
+        currentMonthPayments?.some((p) => p.status === "Pending") ?? false;
     } else if (activeCategory === "overdue") {
       matchesCategory =
-        user.payments?.some((p) => p.status === "Overdue") ?? false;
+        currentMonthPayments?.some((p) => p.status === "Overdue") ?? false;
+    } else if (activeCategory === "past-due") {
+      matchesCategory = pastDuePayments?.length > 0; // ✅ New filter for past due payments
     }
-    // If activeCategory === "all", no extra check needed
 
     return matchesSearch && matchesCategory;
   });
 
   return (
     <div className=" h-screen overflow-y-auto custom-scrollbar flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6 min-h-screen">
-      <UsersHeader userCount={users.length} />
+      <UsersHeader
+        totalUsers={allCount}
+        pendingUsers={pendingCount}
+        paidUsers={paidCount}
+        overdueUsers={overdueCount}
+        activeCategory={activeCategory}
+      />
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar Section */}
         <UsersSidebarSection

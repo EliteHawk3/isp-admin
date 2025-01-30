@@ -18,8 +18,8 @@ const PackageForm = ({
 
   // Form state
   const [name, setName] = useState(pkg?.name || "");
-  const [speed, setSpeed] = useState(pkg?.speed || 0);
-  const [cost, setCost] = useState(pkg?.cost || 0);
+  const [speed, setSpeed] = useState<number | null>(pkg?.speed || null);
+  const [cost, setCost] = useState<number | null>(pkg?.cost || null);
   // Removed usersCount state
   // const [usersCount, setUsersCount] = useState(0); // Local state for user count
 
@@ -36,8 +36,12 @@ const PackageForm = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Ensure speed and cost are numbers, defaulting to 0 if null
+    const finalSpeed = speed ?? 0;
+    const finalCost = cost ?? 0;
+
     // Validation
-    if (!name.trim() || speed <= 0 || cost <= 0) {
+    if (!name.trim() || finalSpeed <= 0 || finalCost <= 0) {
       alert("Please fill out all fields with valid values.");
       return;
     }
@@ -49,9 +53,9 @@ const PackageForm = ({
     onSubmit({
       id: pkg?.id || Math.random().toString(36).substring(2, 9),
       name,
-      speed,
-      cost,
-      users: userCount, // Use the existing user count or 0
+      speed: finalSpeed, // ✅ Now always a valid number
+      cost: finalCost, // ✅ Now always a valid number
+      users: userCount,
     });
   };
 
@@ -78,24 +82,32 @@ const PackageForm = ({
         />
       </label>
 
+      {/* Speed Input */}
       <label className="text-sm text-gray-400 font-semibold">
         Speed (Mbps):
         <input
           type="number"
-          value={speed}
-          onChange={(e) => setSpeed(Number(e.target.value))}
+          value={speed ?? ""}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSpeed(value === "" ? null : Number(value)); // ✅ Converts back to number
+          }}
           placeholder="Enter speed (e.g., 100 Mbps)"
           className="mt-2 block w-full px-4 py-2 bg-gray-800 text-white rounded-md border border-gray-600 focus:ring-2 focus:ring-green-500 focus:outline-none"
           required
         />
       </label>
 
+      {/* Cost Input */}
       <label className="text-sm text-gray-400 font-semibold">
         Cost ($):
         <input
           type="number"
-          value={cost}
-          onChange={(e) => setCost(Number(e.target.value))}
+          value={cost ?? ""}
+          onChange={(e) => {
+            const value = e.target.value;
+            setCost(value === "" ? null : Number(value)); // ✅ Converts back to number
+          }}
           placeholder="Enter cost in dollars"
           className="mt-2 block w-full px-4 py-2 bg-gray-800 text-white rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:outline-none"
           required
@@ -112,17 +124,17 @@ const PackageForm = ({
       {/* Buttons */}
       <div className="flex gap-4 justify-end mt-6">
         <button
-          type="submit"
-          className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
-        >
-          Save
-        </button>
-        <button
           type="button"
           onClick={onCancel}
           className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg hover:shadow-gray-600/50 transition-all duration-300"
         >
           Cancel
+        </button>
+        <button
+          type="submit"
+          className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
+        >
+          Save
         </button>
       </div>
     </form>

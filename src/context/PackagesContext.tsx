@@ -16,8 +16,6 @@ interface PackagesContextType {
   addPackage: (newPackage: Package) => void; // Add a new package
   editPackage: (updatedPackage: Package) => void; // Edit an existing package
   deletePackage: (id: string) => void; // Delete a package
-  // updatePackageUsers: (packageId: string, userCount: number) => void; // Update user count for a package
-  // updatePackagePrices: (updatedPrices: { id: string; cost: number }[]) => void; // Bulk update package prices
 }
 
 /**

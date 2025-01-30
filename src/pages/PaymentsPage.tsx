@@ -9,7 +9,7 @@ import * as XLSX from "xlsx";
 import PaymentsHeader from "../components/payments/PaymentsHeader";
 import RevenueReport from "../components/payments/RevenueReport";
 const PaymentsPage = () => {
-  const { users, markAsPaid, markAsUnpaid, setUsers } = useUsers();
+  const { users, markAsPaid, markAsUnpaid, deletePayment } = useUsers();
   const { packages } = usePackages();
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -123,21 +123,23 @@ const PaymentsPage = () => {
     markAsUnpaid(userId, paymentId);
   };
 
+  // const handleDeletePayment = (userId: string, paymentId: string) => {
+  //   setUsers((prevUsers) =>
+  //     prevUsers.map((user) =>
+  //       user.id === userId
+  //         ? {
+  //             ...user,
+  //             payments: user.payments.filter(
+  //               (payment) => payment.id !== paymentId
+  //             ),
+  //           }
+  //         : user
+  //     )
+  //   );
+  // };
   const handleDeletePayment = (userId: string, paymentId: string) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId
-          ? {
-              ...user,
-              payments: user.payments.filter(
-                (payment) => payment.id !== paymentId
-              ),
-            }
-          : user
-      )
-    );
+    deletePayment(userId, paymentId); // Call deletePayment from context
   };
-
   return (
     <div className="  h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6 overflow-y-auto custom-scrollbar ">
       {/* Payments Header */}

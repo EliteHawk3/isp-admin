@@ -12,6 +12,7 @@ interface UsersSidebarSectionProps {
   pendingCount: number;
   paidCount: number;
   overdueCount: number;
+
   onCategoryChange: (category: string) => void;
   onAddUser: () => void;
   activeCategory: string;

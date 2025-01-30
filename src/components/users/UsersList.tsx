@@ -54,16 +54,61 @@ const UsersList: React.FC<UsersListProps> = ({
    * Determine which status icon to show based on the user's payment statuses.
    */
   const getStatusIcon = (user: User) => {
-    if (user.payments?.some((p) => p.status === "Overdue")) {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Get only the payments for the current month
+    const currentMonthPayments = user.payments?.filter((payment) => {
+      const paymentDate = new Date(payment.date);
+      return (
+        paymentDate.getMonth() === currentMonth &&
+        paymentDate.getFullYear() === currentYear
+      );
+    });
+
+    // Get past pending or overdue payments
+    const pastPendingPayments = user.payments?.filter((payment) => {
+      const paymentDate = new Date(payment.date);
+      return (
+        (payment.status === "Pending" || payment.status === "Overdue") &&
+        (paymentDate.getMonth() < currentMonth ||
+          paymentDate.getFullYear() < currentYear)
+      );
+    });
+
+    // Prioritize overdue payments (🔴)
+    if (pastPendingPayments?.some((p) => p.status === "Overdue")) {
+      return (
+        <div className="flex items-center gap-1">
+          <MdErrorOutline className="text-red-500 text-lg" />
+          <span className="text-red-500 text-xs">Past Due</span>
+        </div>
+      );
+    }
+
+    // Prioritize past pending payments (🟡)
+    if (pastPendingPayments?.some((p) => p.status === "Pending")) {
+      return (
+        <div className="flex items-center gap-1">
+          <MdPending className="text-yellow-500 text-lg" />
+          <span className="text-yellow-500 text-xs">Past Pending</span>
+        </div>
+      );
+    }
+
+    // Check the current month's payment status
+    if (currentMonthPayments?.some((p) => p.status === "Overdue")) {
       return <MdErrorOutline className="text-red-500 text-lg" />;
     }
-    if (user.payments?.some((p) => p.status === "Pending")) {
+    if (currentMonthPayments?.some((p) => p.status === "Pending")) {
       return <MdPending className="text-teal-400 text-lg" />;
     }
-    if (user.payments?.some((p) => p.status === "Paid")) {
+    if (currentMonthPayments?.some((p) => p.status === "Paid")) {
       return <MdCheckCircle className="text-green-500 text-lg" />;
     }
-    // Default to a gray pending icon if no payments exist
+
+    // Default if no payments exist
     return <MdPending className="text-gray-500 text-lg" />;
   };
 

@@ -248,3 +248,14 @@ h1 {
 .group:hover::before {
   animation: gradient-glows 15s ease-in-out infinite;
 }
+/* Hide number input arrows (spinner) for Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide number input arrows (spinner) for Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}

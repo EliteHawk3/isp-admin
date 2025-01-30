@@ -12,12 +12,17 @@ import {
   FaPercent,
   FaCalendarAlt,
   FaCalendarCheck,
+  FaFileInvoiceDollar,
+  FaCheckCircle,
+  FaExclamationTriangle,
+  FaUndo,
 } from "react-icons/fa";
 import { MdPaid, MdErrorOutline } from "react-icons/md";
 import { useState } from "react";
 import { User } from "../../types/users";
 import { FC } from "react";
 import { IconType } from "react-icons"; // Type for react-icons components
+
 // Define the prop types
 interface DetailCardProps {
   icon: IconType; // Type for the Icon component
@@ -56,6 +61,7 @@ import { usePackages } from "../../context/PackagesContext";
 import { useUsers } from "../../context/UsersContext";
 
 import UserForm from "./UsersForm";
+import PaymentHistory from "../payments/PaymentsHistory";
 
 /** A helper for more readable date output */
 function formatDate(dateString?: string) {
@@ -76,9 +82,12 @@ interface UsersDetailProps {
 const UsersDetail: React.FC<UsersDetailProps> = ({ user }) => {
   const { packages } = usePackages();
   const { deleteUser, markAsPaid, markAsUnpaid, editUser } = useUsers();
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false); // Modal state
 
   const [isEditing, setIsEditing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const [modalType, setModalType] = useState<
     "markAsPaid" | "markAsUnpaid" | null
   >(null);
@@ -108,15 +117,6 @@ const UsersDetail: React.FC<UsersDetailProps> = ({ user }) => {
       paymentDate.getFullYear() === now.getFullYear()
     );
   });
-
-  // Show only Paid payments, sorted descending by paidDate
-  const paymentHistory = user.payments
-    ?.filter((payment) => payment.status === "Paid")
-    .sort(
-      (a, b) =>
-        new Date(b.paidDate || "").getTime() -
-        new Date(a.paidDate || "").getTime()
-    );
 
   /**
    * Dynamically set background color for current payment status.
@@ -196,12 +196,13 @@ const UsersDetail: React.FC<UsersDetailProps> = ({ user }) => {
    * (the parent effect in UsersPage will clear the detail if user is gone).
    */
   const handleDeleteUser = () => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      deleteUser(user.id);
-      // The parent will detect no user exists in the array -> detail is cleared
-    }
+    setShowDeleteModal(true); // Show confirmation modal
   };
 
+  const confirmDeleteUser = () => {
+    deleteUser(user.id); // Call delete function from context
+    setShowDeleteModal(false); // Close modal
+  };
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -236,7 +237,6 @@ const UsersDetail: React.FC<UsersDetailProps> = ({ user }) => {
               className="w-24 h-24 rounded-full border-4 border-gray-700 shadow-lg"
             />
           </motion.div> */}
-
           <div className="mb-8">
             {/* Header */}
             {/* <h2 className="text-2xl font-extrabold text-white mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
@@ -296,7 +296,6 @@ const UsersDetail: React.FC<UsersDetailProps> = ({ user }) => {
               />
             </div>
           </div>
-
           {/* <h2 className="text-xl font-semibold text-transparent bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text mb-4 ">
             Package Details
           </h2> */}
@@ -338,7 +337,6 @@ const UsersDetail: React.FC<UsersDetailProps> = ({ user }) => {
           ) : (
             <p className="text-gray-400 mb-6">No package assigned.</p>
           )}
-
           {/* <h2 className="text-xl font-semibold text-transparent bg-gradient-to-r from-green-400 to-yellow-400 bg-clip-text mb-4">
             Financial Details
           </h2> */}
@@ -380,11 +378,22 @@ const UsersDetail: React.FC<UsersDetailProps> = ({ user }) => {
               </div>
             )}
           </div>
-
           {/* Current Payment */}
-          <h2 className="text-xl font-semibold text-transparent bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text mb-4 ">
-            Current Payment
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Current Payment</h2>
+
+            {/* Payment History Button with Animation */}
+            <button
+              onClick={() => setShowPaymentHistory(true)} // Show modal
+              className="animate-bounce bg-gradient-to-r from-teal-500 to-blue-500 px-4 py-2 text-white rounded-full shadow-md hover:from-teal-600 hover:to-blue-600 flex items-center gap-2 relative "
+              title="View Payment History"
+            >
+              <FaFileInvoiceDollar className="text-lg" />
+              <span className="text-sm font-medium">Payment History</span>
+              {/* Glow Effect */}
+            </button>
+          </div>
+
           {currentPayment ? (
             <div
               className={`p-4 rounded-lg text-white shadow-md flex items-center justify-between gap-4 ${paymentBackgroundColor(
@@ -431,39 +440,6 @@ const UsersDetail: React.FC<UsersDetailProps> = ({ user }) => {
             </p>
           )}
 
-          {/* Payment History */}
-          <h2 className="text-xl font-semibold text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text mb-4">
-            Payment History
-          </h2>
-          {paymentHistory && paymentHistory.length > 0 ? (
-            <div className="space-y-2">
-              {paymentHistory.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="p-4 rounded-lg bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-200 shadow-md flex items-center justify-between gap-4"
-                >
-                  {/* Paid */}
-                  <div className="flex flex-col items-start">
-                    <p className="text-sm text-gray-400">Paid</p>
-                    <p className="text-lg font-semibold">
-                      ${payment.discountedAmount.toFixed(2)}
-                    </p>
-                  </div>
-
-                  {/* Paid On */}
-                  <div className="flex flex-col items-start">
-                    <p className="text-sm text-gray-400">Paid On</p>
-                    <p className="text-lg font-semibold">
-                      {formatDate(payment.paidDate)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-400 mb-6">No payment history available.</p>
-          )}
-
           {/* Action Buttons */}
           <div className="mt-6 flex flex-wrap justify-center gap-4">
             {currentPayment?.status !== "Paid" && (
@@ -496,7 +472,7 @@ const UsersDetail: React.FC<UsersDetailProps> = ({ user }) => {
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.1 }}
-              onClick={handleDeleteUser}
+              onClick={handleDeleteUser} // Show modal instead of `window.confirm`
               className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-400 text-white rounded-lg flex items-center gap-2 shadow-md"
             >
               <FaTrash />
@@ -505,37 +481,106 @@ const UsersDetail: React.FC<UsersDetailProps> = ({ user }) => {
           </div>
         </>
       )}
-
-      {/* PAYMENT MODAL (Mark as Paid / Mark as Unpaid) */}
+      {showDeleteModal && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50"
+        >
+          <div className="bg-gray-900 p-6 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
+            <div className="flex items-center gap-3 mb-4">
+              <FaExclamationTriangle className="text-yellow-400 text-2xl" />
+              <h3 className="text-xl font-semibold text-white">
+                Confirm Deletion
+              </h3>
+            </div>
+            <p className="text-gray-400 mb-6 text-center">
+              Are you sure you want to delete{" "}
+              <span className="font-bold text-white">{user.name}</span>? This
+              action{" "}
+              <span className="text-red-500 font-semibold">
+                cannot be undone.
+              </span>
+            </p>
+            <div className="flex justify-end gap-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all"
+              >
+                Cancel
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={confirmDeleteUser}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-all"
+              >
+                Delete
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+      )}
       {showPaymentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md">
-            <h3 className="text-xl font-semibold text-white mb-4">
-              {modalType === "markAsPaid"
-                ? "Confirm Payment"
-                : "Revert Payment"}
-            </h3>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50"
+        >
+          <div className="bg-gray-900 p-6 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
+            <div className="flex items-center gap-3 mb-4">
+              {modalType === "markAsPaid" ? (
+                <FaCheckCircle className="text-green-400 text-2xl animate-pulse" />
+              ) : (
+                <FaUndo className="text-yellow-400 text-2xl" />
+              )}
+              <h3 className="text-xl font-semibold text-white">
+                {modalType === "markAsPaid"
+                  ? "Confirm Payment"
+                  : "Revert Payment"}
+              </h3>
+            </div>
             {modalType === "markAsPaid" && (
-              <p className="text-gray-300 mb-6">
+              <p className="text-gray-400 mb-6 text-center">
                 {calculateAmountDue().details}
               </p>
             )}
             <div className="flex justify-end gap-4">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowPaymentModal(false)}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all"
               >
                 Cancel
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleConfirmAction}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                className={`px-4 py-2 text-white rounded-lg transition-all ${
+                  modalType === "markAsPaid"
+                    ? "bg-green-600 hover:bg-green-500"
+                    : "bg-yellow-500 hover:bg-yellow-400"
+                }`}
               >
                 Confirm
-              </button>
+              </motion.button>
             </div>
           </div>
-        </div>
+        </motion.div>
+      )}
+
+      {/* Payment History Modal */}
+      {showPaymentHistory && (
+        <PaymentHistory
+          selectedUserId={user.id} // Pass user ID
+          onClose={() => setShowPaymentHistory(false)} // Close modal
+        />
       )}
     </motion.div>
   );
